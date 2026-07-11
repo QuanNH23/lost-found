@@ -88,7 +88,12 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Add fn:substring support if needed
+// Force reload when user navigates back to this page (BFCache)
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
+});
 </script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
 </body>

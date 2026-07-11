@@ -21,35 +21,8 @@
 <body>
 <div class="lf-wrapper">
 
-    <nav class="lf-navbar">
-        <div class="lf-navbar__inner">
-            <a href="${pageContext.request.contextPath}/home" class="lf-navbar__brand">
-                <div class="lf-navbar__logo">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:white; display:block;">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </div>
-                <span class="lf-navbar__title">Lost &amp; Found</span>
-            </a>
-
-            <button class="lf-navbar__toggle" id="navToggle" aria-label="Menu" aria-expanded="false">☰</button>
-
-            <ul class="lf-navbar__nav" id="mainNav">
-                <li><a href="${pageContext.request.contextPath}/home" class="lf-navbar__link">Trang chủ</a></li>
-                <li><a href="${pageContext.request.contextPath}/report_lost?type=lost" class="lf-navbar__link">Báo mất</a></li>
-                <li><a href="${pageContext.request.contextPath}/report_found" class="lf-navbar__link">Báo nhặt</a></li>
-                <li><a href="${pageContext.request.contextPath}/my_items" class="lf-navbar__link">Tin của tôi</a></li>
-                <li><a href="${pageContext.request.contextPath}/inbox" class="lf-navbar__link">Hộp thư</a></li>
-            </ul>
-
-            <div class="lf-navbar__user">
-                <lf:userMenu fullName="${sessionScope.currentUser.fullName}"
-                             role="${sessionScope.userRole}"
-                             contextPath="${pageContext.request.contextPath}"/>
-            </div>
-        </div>
-    </nav>
+    <!-- ── NAVBAR ── -->
+    <lf:navbar activeMenu="items" />
 
     <main class="lf-main">
         <div class="lf-page-header">
@@ -71,27 +44,38 @@
 
         <div class="flex gap-lg" style="align-items:flex-start;">
             <!-- Bộ lọc (sidebar ~30%) -->
-            <aside class="lf-card" style="flex:0 0 280px;max-width:320px;">
-                <div class="lf-card__title">Bộ lọc</div>
-                <form action="${pageContext.request.contextPath}/items" method="get" class="lf-form">
+            <aside class="lf-card" style="flex:0 0 280px;max-width:320px; padding:20px;">
+                <form action="${pageContext.request.contextPath}/items" method="get" class="lf-form" id="filterForm">
                     <input type="hidden" name="type" value="${type}"/>
 
-                    <div class="lf-form-group">
-                        <label class="lf-label" for="categoryId">Danh mục</label>
-                        <select id="categoryId" name="categoryId" class="lf-select">
-                            <option value="">Tất cả</option>
-                            <c:forEach var="c" items="${categories}">
-                                <option value="${c.categoryId}" ${selectedCategoryId == c.categoryId ? 'selected' : ''}>
-                                    ${c.name}
-                                </option>
-                            </c:forEach>
-                        </select>
+                    <div class="flex flex-between flex-center-y" style="border-bottom:1px solid #e5e7eb; padding-bottom:12px; margin-bottom:20px;">
+                        <h3 style="font-size:1.1rem; margin:0; font-weight:700;">Bộ lọc</h3>
+                        <a href="${pageContext.request.contextPath}/items?type=${type}" style="color:var(--clr-primary); font-size:0.85rem; text-decoration:none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:2px;"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><polyline points="21 3 21 8 16 8"></polyline></svg>Xóa bộ lọc
+                        </a>
                     </div>
 
-                    <div class="lf-form-group">
-                        <label class="lf-label" for="locationId">Vị trí</label>
-                        <select id="locationId" name="locationId" class="lf-select">
-                            <option value="">Tất cả</option>
+                    <div class="lf-form-group" style="margin-bottom:20px;">
+                        <label class="lf-label" style="font-size:1.05rem; margin-bottom:8px;">Từ khóa</label>
+                        <input type="text" name="search" class="lf-input" value="${searchKeyword}" placeholder="Nhập từ khóa cần tìm kiếm...">
+                    </div>
+
+                    <div class="lf-form-group" style="margin-bottom:20px;">
+                        <label class="lf-label" style="font-size:1.05rem; margin-bottom:8px;">Danh mục</label>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <c:forEach var="c" items="${categories}">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.95rem; color:#374151;">
+                                    <input type="radio" name="categoryId" value="${c.categoryId}" style="width:18px; height:18px; accent-color:var(--clr-primary);" onchange="this.form.submit()" ${selectedCategoryId == c.categoryId ? 'checked' : ''}>
+                                    ${c.name}
+                                </label>
+                            </c:forEach>
+                        </div>
+                    </div>
+
+                    <div class="lf-form-group" style="margin-bottom:24px;">
+                        <label class="lf-label" for="locationId" style="font-size:1.05rem; margin-bottom:8px;">Chọn khu vực</label>
+                        <select id="locationId" name="locationId" class="lf-select" style="padding:10px;" onchange="this.form.submit()">
+                            <option value="">Toàn quốc</option>
                             <c:forEach var="l" items="${locations}">
                                 <option value="${l.locationId}" ${selectedLocationId == l.locationId ? 'selected' : ''}>
                                     ${l.name}
@@ -100,19 +84,9 @@
                         </select>
                     </div>
 
-                    <div class="lf-form-group">
-                        <label class="lf-label" for="fromDate">Từ ngày</label>
-                        <input id="fromDate" type="date" name="fromDate" class="lf-input" value="${fromDate}"/>
-                    </div>
-
-                    <div class="lf-form-group">
-                        <label class="lf-label" for="toDate">Đến ngày</label>
-                        <input id="toDate" type="date" name="toDate" class="lf-input" value="${toDate}"/>
-                    </div>
-
-                    <div class="lf-form-group">
-                        <button type="submit" class="btn btn-primary btn-full">Lọc</button>
-                        <a href="${pageContext.request.contextPath}/items?type=${type}" class="btn btn-ghost btn-full" style="margin-top:8px;">Xóa lọc</a>
+                    <div class="flex gap-md" style="margin-top:20px;">
+                        <button type="button" class="btn btn-secondary" style="flex:1; background:white; color:#374151; border:1px solid #d1d5db;" onclick="window.location.href='${pageContext.request.contextPath}/items?type=${type}'">Đặt lại</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1; background:#047857; border-color:#047857;">Tìm kiếm</button>
                     </div>
                 </form>
             </aside>

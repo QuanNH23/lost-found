@@ -157,6 +157,16 @@ public class MessageDAO extends DBContext {
         return 0;
     }
 
+    public void markMessagesAsRead(int itemId, int receiverId) {
+        if (connection == null) return;
+        String sql = "UPDATE Message SET is_read = 1 WHERE related_item_id = ? AND user_id != ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            ps.setInt(2, receiverId);
+            ps.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
     // 2. Lấy danh sách Tin nhắn đã gửi (Outbox)
     public List<Map<String, Object>> getOutbox(int senderId) {
         List<Map<String, Object>> list = new ArrayList<>();

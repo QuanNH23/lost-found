@@ -69,6 +69,12 @@ public class itemDetailController extends HttpServlet {
         }
 
         MessageDAO messageDAO = new MessageDAO();
+        // Mark as read any unread messages sent TO the current user for this item
+        messageDAO.markMessagesAsRead(itemId, currentUser.getUserId());
+        
+        // Immediately update the unread count in the request so the navbar shows the updated number
+        request.setAttribute("unreadInboxCount", messageDAO.countUnreadInbox(currentUser.getUserId()));
+        
         List<Message> allMessages = messageDAO.getMessagesByItemId(itemId);
         List<Message> itemMessages = new ArrayList<>();
         boolean isItemOwner = currentUser.getUserId() == itemDetail.getUserId();

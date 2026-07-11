@@ -31,40 +31,13 @@ public class AuthorizationFilter implements Filter {
         
         String path = req.getServletPath();
         
-        // Let assets pass unconditionally
+        // 1. Let assets pass unconditionally
         if (path.startsWith("/assets/")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Public paths
-        if (path.equals("/login") || path.equals("/register") || path.equals("/home") 
-            || path.equals("/items") || path.equals("/item_detail") || path.equals("/")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Check login for other paths
-        if (session == null || session.getAttribute("currentUser") == null) {
-            res.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-        
-        String role = (String) session.getAttribute("userRole");
-        
-        // Admin-only paths
-        if (path.startsWith("/manage_") || path.startsWith("/update") || 
-            path.startsWith("/delete") || path.startsWith("/add") ||
-            path.startsWith("/admin/")) {
-            if ("admin".equals(role)) {
-                chain.doFilter(request, response);
-            } else {
-                res.sendRedirect(req.getContextPath() + "/home");
-            }
-            return;
-        }
-        
-        // Set unread count if user is logged in
+        // 2. Set unread count for ALL pages if user is logged in
         if (session != null && session.getAttribute("currentUser") != null) {
             Users currUser = (Users) session.getAttribute("currentUser");
             MessageDAO msgDao = new MessageDAO();
@@ -72,7 +45,32 @@ public class AuthorizationFilter implements Filter {
             req.setAttribute("unreadInboxCount", unreadCount);
         }
 
-        // Pass to target
+        // 3. Public paths - skip auth checks
+        if (path.equals("/login") || path.equals("/register") || path.equals("/home") 
+            || path.equals("/items") || path.equals("/item_detail") || path.equals("/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // 4. Check login for other paths
+        if (session == null || session.getAttribute("currentUser") == null) {
+            res.sendRedirect(req.getContextPath() + "/login");
+            return;
+        }
+        
+        String role = (String) session.getAttribute("userRole");
+        
+        // 5. Admin-only paths
+        if (path.startsWith("/manage_") || path.startsWith("/update") || 
+            path.startsWith("/delete") || path.startsWith("/add") ||
+            path.startsWith("/admin/")) {
+            if (!"admin".equals(role)) {
+                res.sendRedirect(req.getContextPath() + "/home");
+                return;
+            }
+        }
+        
+        // 6. Pass to target for authenticated users
         chain.doFilter(request, response);
     }
 
