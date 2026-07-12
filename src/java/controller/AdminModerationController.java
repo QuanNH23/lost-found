@@ -33,8 +33,16 @@ public class AdminModerationController extends HttpServlet {
         ItemDAO itemDao = new ItemDAO();
         MessageDAO msgDao = new MessageDAO();
 
-        // 1. Get items hidden by bot (status = 'processing')
-        List<Items> processingItems = itemDao.getItemsByStatus("processing");
+        // 1. Get items hidden by bot (status = 'processing') and filter out suspended/blacklisted users
+        List<Items> rawProcessingItems = itemDao.getItemsByStatus("processing");
+        List<Items> processingItems = new ArrayList<>();
+        dal.UserDAO uDao = new dal.UserDAO();
+        for (Items item : rawProcessingItems) {
+            model.Users owner = uDao.getUserById(item.getUserId());
+            if (owner != null && owner.isIsActive() && !util.ContentFilter.getAllBlacklistPhones().contains(owner.getPhoneNumber())) {
+                processingItems.add(item);
+            }
+        }
 
         // 2. Get reported items (items with >= 1 report)
         List<Map<String, Object>> reportedItems = msgDao.getReportedItems();
@@ -66,9 +74,9 @@ public class AdminModerationController extends HttpServlet {
             itemDao.updateItemStatus(itemId, "active");
             session.setAttribute("message", "Da duyet lai bai viet.");
         } else if ("delete".equals(action)) {
-            // Hard delete or cancel
-            itemDao.updateItemStatus(itemId, "cancel");
-            session.setAttribute("message", "Da xoa/an bai viet vinh vien.");
+            // Hard delete
+            itemDao.deleteItem(itemId);
+            session.setAttribute("message", "Da xoa bai viet vinh vien.");
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/moderation");

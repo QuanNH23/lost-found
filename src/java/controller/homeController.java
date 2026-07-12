@@ -114,8 +114,8 @@ public class homeController extends HttpServlet {
         CategoryDAO categoryDAO = new CategoryDAO();
         List<Categories> categories = categoryDAO.getAllCategories();
         List<Locations> locations = locationDAO.getAllLocations();
-        List<Items> lostItems = itemDAO.getItemsByType("lost");
-        List<Items> foundItems = itemDAO.getItemsByType("found");
+        List<Items> lostItems = itemDAO.getActiveItemsByType("lost");
+        List<Items> foundItems = itemDAO.getActiveItemsByType("found");
         List<Items> allItems = new ArrayList<>();
         int pendingItems = 0;
         int pendingClaims = 0;

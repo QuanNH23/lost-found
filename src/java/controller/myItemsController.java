@@ -155,6 +155,29 @@ public class myItemsController extends HttpServlet {
 
         Users currentUser = (Users) session.getAttribute("currentUser");
         String action = request.getParameter("action");
+        if ("complete".equalsIgnoreCase(action)) {
+            Integer itemId = parseInt(request.getParameter("item_id"));
+            if (itemId == null || itemId <= 0) {
+                session.setAttribute("message", "Ma tin khong hop le.");
+                response.sendRedirect("my_items");
+                return;
+            }
+            ItemDAO dao = new ItemDAO();
+            Items item = dao.getItemByIdAndUser(itemId, currentUser.getUserId());
+            if (item == null) {
+                session.setAttribute("message", "Khong tim thay bai dang hoặc ban khong co quyen.");
+                response.sendRedirect("my_items");
+                return;
+            }
+            boolean ok = dao.updateItemStatus(itemId, "completed");
+            if (ok) {
+                session.setAttribute("message", "Cap nhat trang thai thanh cong.");
+            } else {
+                session.setAttribute("message", "Cap nhat trang thai that bai.");
+            }
+            response.sendRedirect("my_items");
+            return;
+        }
 
         if (!"delete".equalsIgnoreCase(action)) {
             doGet(request, response);

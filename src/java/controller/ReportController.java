@@ -67,7 +67,7 @@ public class ReportController extends HttpServlet {
             );
 
             if (reported) {
-                // 3. Auto-hide logic: if >= 3 reports, change status to processing
+                // 3. Auto-hide logic: if >= 3 reports, change status to suspended
                 int reportCount = msgDao.countReportsByItemId(itemId);
                 if (reportCount >= 3) {
                     itemDao.updateItemStatus(itemId, "processing");

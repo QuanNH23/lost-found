@@ -11,6 +11,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/style.css">
+    <style>
+        .lf-inbox-msg.unread {
+            background-color: #f0f7ff !important;
+            border-left: 4px solid #1877f2 !important;
+            box-shadow: 0 2px 4px rgba(24, 119, 242, 0.08);
+        }
+        .lf-inbox-msg.unread .lf-inbox-msg__sender {
+            font-weight: 800 !important;
+            color: #1877f2 !important;
+        }
+        .lf-inbox-msg.unread .lf-inbox-msg__subject {
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+        .lf-inbox-msg.unread .lf-inbox-msg__preview {
+            font-weight: 600 !important;
+            color: #334155 !important;
+        }
+        .lf-inbox-msg.unread .lf-inbox-msg__avatar {
+            background: linear-gradient(135deg, #1877f2, #3b5998) !important;
+            color: white !important;
+            box-shadow: 0 0 6px rgba(24, 119, 242, 0.3);
+        }
+    </style>
 </head>
 <body>
 <div class="lf-wrapper">
@@ -28,27 +52,43 @@
         <c:choose>
             <c:when test="${not empty inbox}">
                 <c:forEach var="msg" items="${inbox}">
-                    <div class="lf-inbox-msg" style="cursor:pointer;" onclick="window.location.href='${pageContext.request.contextPath}/item_detail?id=${msg.itemId}'">
-                        <c:set var="__sn" value="${fn:trim(msg.senderName)}"/>
-                        <c:set var="__st" value="${fn:split(__sn, ' ')}"/>
-                        <c:set var="__sl" value="${__st[fn:length(__st)-1]}"/>
-                        <c:set var="__si" value="${fn:toUpperCase(fn:substring(__sl, 0, 1))}"/>
-                        <div class="lf-inbox-msg__avatar">${__si}</div>
-                        <div class="lf-inbox-msg__body-wrap">
-                            <div class="lf-inbox-msg__head">
-                                <a class="lf-inbox-msg__sender"
-                                   href="${pageContext.request.contextPath}/user_detail?id=${msg.senderId}">
-                                    👤 ${msg.senderName}
-                                </a>
-                                <span class="lf-inbox-msg__date">${msg.createdAt}</span>
-                            </div>
-                            <div class="lf-inbox-msg__subject">📦 ${msg.itemTitle} — ${msg.title}</div>
-                            <div class="lf-inbox-msg__preview">${msg.message}</div>
-                            <div class="mt-sm">
-                                <a href="${pageContext.request.contextPath}/item_detail?id=${msg.itemId}"
-                                   class="btn btn-primary btn-sm">💬 Phản hồi</a>
-                            </div>
-                        </div>
+                    <div class="lf-inbox-msg ${msg.isRead ? '' : 'unread'}" style="cursor:pointer;" 
+                         onclick="if (${not empty msg.itemId}) { window.location.href='${pageContext.request.contextPath}/item_detail?id=${msg.itemId}'; }">
+                        <c:choose>
+                            <c:when test="${not empty msg.itemId}">
+                                <c:set var="__sn" value="${fn:trim(msg.senderName)}"/>
+                                <c:set var="__st" value="${fn:split(__sn, ' ')}"/>
+                                <c:set var="__sl" value="${__st[fn:length(__st)-1]}"/>
+                                <c:set var="__si" value="${fn:toUpperCase(fn:substring(__sl, 0, 1))}"/>
+                                <div class="lf-inbox-msg__avatar">${__si}</div>
+                                <div class="lf-inbox-msg__body-wrap">
+                                    <div class="lf-inbox-msg__head">
+                                        <a class="lf-inbox-msg__sender"
+                                           href="${pageContext.request.contextPath}/user_detail?id=${msg.senderId}">
+                                            👤 ${msg.senderName}
+                                        </a>
+                                        <span class="lf-inbox-msg__date">${msg.createdAt}</span>
+                                    </div>
+                                    <div class="lf-inbox-msg__subject">📦 ${msg.itemTitle} — ${msg.title}</div>
+                                    <div class="lf-inbox-msg__preview">${msg.message}</div>
+                                    <div class="mt-sm">
+                                        <a href="${pageContext.request.contextPath}/item_detail?id=${msg.itemId}"
+                                           class="btn btn-primary btn-sm">💬 Phản hồi</a>
+                                    </div>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="lf-inbox-msg__avatar" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">🔔</div>
+                                <div class="lf-inbox-msg__body-wrap">
+                                    <div class="lf-inbox-msg__head">
+                                        <span class="lf-inbox-msg__sender" style="color:#ef4444; font-weight:700;">📢 Thông báo hệ thống</span>
+                                        <span class="lf-inbox-msg__date">${msg.createdAt}</span>
+                                    </div>
+                                    <div class="lf-inbox-msg__subject" style="color:var(--txt-primary); font-weight:700;">🔒 Trạng thái tài khoản</div>
+                                    <div class="lf-inbox-msg__preview" style="color:var(--txt-primary); font-weight:600;">${msg.message}</div>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </c:forEach>
             </c:when>

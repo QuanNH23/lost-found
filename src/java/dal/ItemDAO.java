@@ -225,7 +225,7 @@ public class ItemDAO extends DBContext {
                 .append("INNER JOIN Categories c ON i.category_id = c.category_id ")
                 .append("INNER JOIN Locations l ON i.location_id = l.location_id ")
                 .append("INNER JOIN Users u ON i.user_id = u.user_id ")
-                .append("WHERE i.type = ? AND (i.status = 'active' OR i.status = 'processing') ");
+                .append("WHERE i.type = ? AND i.status = 'active' ");
 
         List<Object> params = new ArrayList<>();
         params.add(type);
@@ -356,6 +356,8 @@ public class ItemDAO extends DBContext {
         return false;
     }
 
+
+
     public boolean updateItemStatus(int itemId, String status) {
         if (connection == null) {
             return false;
@@ -374,9 +376,9 @@ public class ItemDAO extends DBContext {
         return false;
     }
 
-    public void deleteItem(int id) {
+    public boolean deleteItem(int id) {
         if (connection == null) {
-            return;
+            return false;
         }
 
         boolean oldAutoCommit = true;
@@ -389,13 +391,26 @@ public class ItemDAO extends DBContext {
                 deleteClaims.executeUpdate();
             }
 
+            try (PreparedStatement deleteMessages = connection.prepareStatement("DELETE FROM Messages WHERE item_id = ?")) {
+                deleteMessages.setInt(1, id);
+                deleteMessages.executeUpdate();
+            }
+
+            int deletedRows;
             try (PreparedStatement deleteItem = connection.prepareStatement("DELETE FROM Items WHERE item_id = ?")) {
                 deleteItem.setInt(1, id);
-                deleteItem.executeUpdate();
+                deletedRows = deleteItem.executeUpdate();
+            }
+
+            if (deletedRows <= 0) {
+                connection.rollback();
+                connection.setAutoCommit(oldAutoCommit);
+                return false;
             }
 
             connection.commit();
             connection.setAutoCommit(oldAutoCommit);
+            return true;
         } catch (Exception e) {
             try {
                 connection.rollback();
@@ -409,6 +424,7 @@ public class ItemDAO extends DBContext {
             }
             e.printStackTrace();
         }
+        return false;
     }
 
     private Items mapItem(ResultSet rs) throws SQLException {
@@ -430,6 +446,8 @@ public class ItemDAO extends DBContext {
         item.setUpdatedAt(rs.getTimestamp("updated_at"));
         return item;
     }
+
+
 
     public List<Items> getActiveItemsByType(String type) {
         List<Items> list = new ArrayList<>();
@@ -506,7 +524,7 @@ public class ItemDAO extends DBContext {
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
                 + "INNER JOIN Locations l ON i.location_id = l.location_id "
                 + "INNER JOIN Users u ON i.user_id = u.user_id "
-                + "WHERE i.type = ? AND (i.status = 'active' OR i.status = 'processing') "
+                + "WHERE i.type = ? AND i.status = 'active' "
                 + "ORDER BY i.created_at DESC";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -583,5 +601,49 @@ public class ItemDAO extends DBContext {
         }
 
         return list;
+    }
+
+    public void suspendItemsByUserId(int userId) {
+        if (connection == null) return;
+        String sql = "UPDATE Items SET status = 'processing' WHERE user_id = ? AND status = 'active'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void unsuspendItemsByUserId(int userId) {
+        if (connection == null) return;
+        String sql = "UPDATE Items SET status = 'active' WHERE user_id = ? AND status = 'processing'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void suspendItemsByUserPhone(String phone) {
+        if (connection == null) return;
+        String sql = "UPDATE Items SET status = 'processing' WHERE status = 'active' AND user_id IN (SELECT user_id FROM Users WHERE phone_number = ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, phone);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void unsuspendItemsByUserPhone(String phone) {
+        if (connection == null) return;
+        String sql = "UPDATE Items SET status = 'active' WHERE status = 'processing' AND user_id IN (SELECT user_id FROM Users WHERE phone_number = ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, phone);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

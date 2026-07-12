@@ -43,6 +43,7 @@ public class AuthorizationFilter implements Filter {
             MessageDAO msgDao = new MessageDAO();
             int unreadCount = msgDao.countUnreadInbox(currUser.getUserId());
             req.setAttribute("unreadInboxCount", unreadCount);
+            req.setAttribute("inboxNotificationsList", msgDao.getInbox(currUser.getUserId()));
         }
 
         // 3. Public paths - skip auth checks

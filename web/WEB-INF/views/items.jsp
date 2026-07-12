@@ -98,10 +98,28 @@
                         <div class="lf-items-grid">
                             <c:forEach var="it" items="${items}">
                                 <div class="lf-item-card">
-                                    <div class="flex flex-between gap-sm" style="padding: 12px 12px 0;">
-                                        <lf:typeBadge type="${type}"/>
-                                        <span class="text-xs text-muted"><fmt:formatDate value="${it.createdAt}" pattern="dd/MM/yyyy"/></span>
-                                    </div>
+                                        <!-- Thumbnail Image -->
+                                        <c:set var="firstImg" value="${it.imagesJSON}"/>
+                                        <c:if test="${not empty firstImg}">
+                                            <c:set var="imgToShow" value="${fn:replace(fn:replace(fn:replace(fn:split(firstImg, ',')[0], '\"', ''), '[', ''), ']', '')}"/>
+                                            <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
+                                                <img src="${pageContext.request.contextPath}/${imgToShow}" class="lf-item-card__thumb" alt="Ảnh đồ vật">
+                                            </a>
+                                        </c:if>
+                                        <c:if test="${empty firstImg}">
+                                            <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
+                                                <div class="lf-item-card__thumb-placeholder">
+                                                    <c:choose>
+                                                        <c:when test="${type == 'found'}">🟢</c:when>
+                                                        <c:otherwise>📦</c:otherwise>
+                                                    </c:choose>
+                                                </div>
+                                            </a>
+                                        </c:if>
+                                        <div class="flex flex-between gap-sm" style="padding: 12px 12px 0;">
+                                            <lf:typeBadge type="${type}"/>
+                                            <span class="text-xs text-muted"><fmt:formatDate value="${it.createdAt}" pattern="dd/MM/yyyy"/></span>
+                                        </div>
                                     <div class="lf-item-card__body">
                                         <div class="lf-item-card__title">${it.title}</div>
                                         <div class="lf-item-card__meta">

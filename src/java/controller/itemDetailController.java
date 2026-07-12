@@ -77,17 +77,12 @@ public class itemDetailController extends HttpServlet {
         
         List<Message> allMessages = messageDAO.getMessagesByItemId(itemId);
         List<Message> itemMessages = new ArrayList<>();
-        boolean isItemOwner = currentUser.getUserId() == itemDetail.getUserId();
-
-        if (isItemOwner) {
-            itemMessages = allMessages;
-        } else {
-            for (Message msg : allMessages) {
-                if (msg.getUserId() == currentUser.getUserId()) {
-                    itemMessages.add(msg);
-                }
+        for (Message msg : allMessages) {
+            if ("Comment".equalsIgnoreCase(msg.getTitle())) {
+                itemMessages.add(msg);
             }
         }
+        boolean isItemOwner = currentUser.getUserId() == itemDetail.getUserId();
 
         ClaimDAO claimDAO = new ClaimDAO();
         List<Claims> claims = claimDAO.getClaimsByItemId(itemId);
@@ -98,6 +93,28 @@ public class itemDetailController extends HttpServlet {
 
         Users owner = new UserDAO().getUserById(itemDetail.getUserId());
 
+        // Parse custom SĐT from description if present
+        String customPhone = null;
+        String desc = itemDetail.getDescription();
+        String cleanDesc = desc;
+        if (desc != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\s*\\[SĐT:\\s*(\\d+)\\]").matcher(desc);
+            if (m.find()) {
+                customPhone = m.group(1);
+                cleanDesc = desc.replace(m.group(0), "");
+            }
+        }
+
+        request.setAttribute("cleanDescription", cleanDesc);
+        request.setAttribute("itemOwnerPhone", customPhone != null ? customPhone : (owner != null ? owner.getPhoneNumber() : "—"));
+
+        List<Items> relatedItems = new ItemDAO().getLatestActiveItems(itemDetail.getType(), 4);
+        relatedItems.removeIf(it -> it.getItemId() == itemId);
+        Map<Integer, String> relatedImages = new HashMap<>();
+        for (Items rit : relatedItems) {
+            relatedImages.put(rit.getItemId(), parseFirstImagePath(rit.getImagesJSON()));
+        }
+
         request.setAttribute("itemDetail", itemDetail);
         request.setAttribute("itemMessages", itemMessages);
         request.setAttribute("senderNames", messageDAO.getSenderNamesByItemId(itemId));
@@ -107,6 +124,8 @@ public class itemDetailController extends HttpServlet {
         request.setAttribute("itemOwnerName", owner != null ? owner.getFullName() : null);
         request.setAttribute("itemOwnerId", itemDetail.getUserId());
         request.setAttribute("itemType", itemDetail.getType());
+        request.setAttribute("relatedItems", relatedItems);
+        request.setAttribute("relatedImages", relatedImages);
         request.getRequestDispatcher("/WEB-INF/views/item_detail.jsp").forward(request, response);
     }
 
@@ -130,29 +149,15 @@ public class itemDetailController extends HttpServlet {
         int itemId = Integer.parseInt(request.getParameter("item_id"));
         Items itemDetail = new ItemDAO().getItemById(itemId);
 
-        if (currentUser.getUserId() == itemDetail.getUserId()) {
-            request.setAttribute("ERROR", "Ban khong the gui tin nhan cho bai dang cua chinh minh.");
-            forwardDetail(itemId, request, response, currentUser);
-            return;
-        }
-
-        String title = request.getParameter("title");
+        String title = "Comment";
         String content = request.getParameter("message");
         MessageDAO messageDAO = new MessageDAO();
 
         if (messageDAO.insertMessage(currentUser.getUserId(), itemId, title, content)) {
-            if ("found".equalsIgnoreCase(itemDetail.getType())) {
-                ClaimDAO claimDAO = new ClaimDAO();
-                if (claimDAO.getClaimByItemAndClaimer(itemId, currentUser.getUserId()) == null) {
-                    claimDAO.insertClaim(itemId, currentUser.getUserId(), itemDetail.getUserId(), content);
-                }
-                request.getSession().setAttribute("message", "Da gui tin nhan va yeu cau thanh cong!");
-            } else {
-                request.getSession().setAttribute("message", "Da gui tin nhan! Cho chu bai xac nhan.");
-            }
+            request.getSession().setAttribute("message", "Da gui binh luan!");
             response.sendRedirect("item_detail?id=" + itemId);
         } else {
-            request.setAttribute("ERROR", "Loi khi gui tin nhan.");
+            request.setAttribute("ERROR", "Loi khi gui binh luan.");
             forwardDetail(itemId, request, response, currentUser);
         }
     }
@@ -174,7 +179,7 @@ public class itemDetailController extends HttpServlet {
             String msg = "accept".equals(decision) ? "Da duyet tra do" : "Da tu choi";
 
             if (claimDAO.updateClaimStatus(claimId, newStatus, msg, currentUser.getUserId())) {
-                itemDAO.updateItemStatus(itemId, "approved".equals(newStatus) ? "completed" : "processing");
+                itemDAO.updateItemStatus(itemId, "approved".equals(newStatus) ? "completed" : "active");
                 request.getSession().setAttribute("message", "Da phan hoi yeu cau thanh cong!");
             }
         } else {
@@ -233,7 +238,7 @@ public class itemDetailController extends HttpServlet {
                 request.getSession().setAttribute("message", "Da chap nhan! Lien he voi chu do de sap xep tra lai.");
             } else if ("reject".equals(decision)) {
                 claimDAO.updateClaimStatus(claimId, "rejected", "Nguoi tim thay tu choi tra lai do", currentUser.getUserId());
-                itemDAO.updateItemStatus(itemId, "processing");
+                itemDAO.updateItemStatus(itemId, "active");
                 request.getSession().setAttribute("message", "Da tu choi yeu cau.");
             } else {
                 request.getSession().setAttribute("message", "Loi: Hanh dong khong hop le.");
@@ -263,5 +268,31 @@ public class itemDetailController extends HttpServlet {
         } else {
             handleSendMessage(request, response, currentUser);
         }
+    }
+
+    private String parseFirstImagePath(String imagesJson) {
+        if (imagesJson == null || imagesJson.trim().isEmpty()) {
+            return null;
+        }
+        String raw = imagesJson.trim();
+        if (raw.startsWith("[")) {
+            raw = raw.substring(1);
+        }
+        if (raw.endsWith("]")) {
+            raw = raw.substring(0, raw.length() - 1);
+        }
+        if (raw.trim().isEmpty()) {
+            return null;
+        }
+        String[] tokens = raw.split(",");
+        String value = tokens[0] == null ? "" : tokens[0].trim();
+        if (value.startsWith("\"")) {
+            value = value.substring(1);
+        }
+        if (value.endsWith("\"")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        value = value.replace("\\\"", "\"").replace("\\\\", "\\");
+        return value.trim().isEmpty() ? null : value;
     }
 }

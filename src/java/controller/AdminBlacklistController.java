@@ -54,10 +54,20 @@ public class AdminBlacklistController extends HttpServlet {
 
         if ("add".equals(action) && phone != null && !phone.trim().isEmpty()) {
             ContentFilter.addBlacklistPhone(phone.trim(), appRealPath);
-            session.setAttribute("message", "Da them vao blacklist.");
+            new dal.ItemDAO().suspendItemsByUserPhone(phone.trim());
+            model.Users u = new dal.UserDAO().getUserByPhone(phone.trim());
+            if (u != null) {
+                new dal.MessageDAO().insertAccountNotification(u.getUserId(), "Account", "Số điện thoại " + phone.trim() + " của bạn đã bị đưa vào danh sách đen (Blacklist) của hệ thống.");
+            }
+            session.setAttribute("message", "Da them vao blacklist va an cac bai dang lien quan.");
         } else if ("remove".equals(action) && phone != null && !phone.trim().isEmpty()) {
             ContentFilter.removeBlacklistPhone(phone.trim(), appRealPath);
-            session.setAttribute("message", "Da xoa khoi blacklist.");
+            new dal.ItemDAO().unsuspendItemsByUserPhone(phone.trim());
+            model.Users u = new dal.UserDAO().getUserByPhone(phone.trim());
+            if (u != null) {
+                new dal.MessageDAO().insertAccountNotification(u.getUserId(), "Account", "Số điện thoại " + phone.trim() + " của bạn đã được xóa khỏi danh sách đen (Blacklist).");
+            }
+            session.setAttribute("message", "Da xoa khoi blacklist va khoi phuc cac bai dang.");
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/blacklist");

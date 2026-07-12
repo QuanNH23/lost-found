@@ -66,9 +66,9 @@ public class reportLostController extends HttpServlet {
 
         request.setAttribute("reportType", reportType);
         request.setAttribute("formTitle", isFound ? "Đăng tin báo Nhặt được đồ" : "Đăng tin báo Mất đồ");
-        request.setAttribute("locationLabel", isFound ? "Vi tri nhat (*)" : "Vi tri mat (*)");
-        request.setAttribute("dateLabel", isFound ? "Thoi diem nhat (*)" : "Thoi diem mat (*)");
-        request.setAttribute("submitLabel", isFound ? "Gui bao nhat" : "Gui bao mat");
+        request.setAttribute("locationLabel", isFound ? "Vị trí nhặt (*)" : "Vị trí mất (*)");
+        request.setAttribute("dateLabel", isFound ? "Thời điểm nhặt (*)" : "Thời điểm mất (*)");
+        request.setAttribute("submitLabel", isFound ? "Gửi báo nhặt" : "Gửi báo mất");
     }
 
     private LocalDateTime parseDateIncident(String raw) {
@@ -219,22 +219,33 @@ public class reportLostController extends HttpServlet {
         Users currentUser = (Users) session.getAttribute("currentUser");
         String reportType = resolveReportType(request);
 
+        // Check if user is blacklisted or deactivated
+        if (!currentUser.isIsActive() || util.ContentFilter.getAllBlacklistPhones().contains(currentUser.getPhoneNumber())) {
+            request.setAttribute("ERROR", "Tài khoản của bạn đã bị khóa hoặc nằm trong danh sách đen, không thể thực hiện đăng bài!");
+            loadReferenceData(request);
+            bindFormMeta(request, reportType);
+            request.getRequestDispatcher("/WEB-INF/views/report_lost.jsp").forward(request, response);
+            return;
+        }
+
         String title = request.getParameter("title");
         String description = request.getParameter("description");
+        String phone = request.getParameter("phone");
         String categoryIdRaw = request.getParameter("category_id");
         String locationIdRaw = request.getParameter("location_id");
         String dateIncidentRaw = request.getParameter("date_incident");
 
         request.setAttribute("oldTitle", title);
         request.setAttribute("oldDescription", description);
+        request.setAttribute("oldPhone", phone);
         request.setAttribute("oldCategoryId", categoryIdRaw);
         request.setAttribute("oldLocationId", locationIdRaw);
         request.setAttribute("oldDateIncident", dateIncidentRaw);
         request.setAttribute("reportType", reportType);
 
         if (isBlank(title) || isBlank(description) || isBlank(categoryIdRaw)
-                || isBlank(locationIdRaw) || isBlank(dateIncidentRaw)) {
-            request.setAttribute("ERROR", "Vui long nhap day du thong tin bat buoc.");
+                || isBlank(locationIdRaw) || isBlank(dateIncidentRaw) || isBlank(phone)) {
+            request.setAttribute("ERROR", "Vui long nhap day du thong tin bat buoc bao gom ca so dien thoai.");
             bindFormMeta(request, reportType);
             loadReferenceData(request);
             request.getRequestDispatcher("/WEB-INF/views/report_lost.jsp").forward(request, response);
@@ -255,12 +266,18 @@ public class reportLostController extends HttpServlet {
                 return;
             }
 
+            // Append phone number to description
+            String fullDescription = description.trim();
+            if (!isBlank(phone)) {
+                fullDescription += "\n\n[SĐT: " + phone.trim() + "]";
+            }
+
             Items item = new Items();
             item.setUserId(currentUser.getUserId());
             item.setCategoryId(categoryId);
             item.setLocationId(locationId);
             item.setTitle(title.trim());
-            item.setDescription(description.trim());
+            item.setDescription(fullDescription);
             item.setDateIncident(java.sql.Timestamp.valueOf(dateIncident));
             item.setImagesJSON(imagesJson);
 

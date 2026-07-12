@@ -80,10 +80,10 @@
                                             <tr>
                                                 <td><span class="fw-bold text-danger">${phone}</span></td>
                                                 <td style="text-align:right;">
-                                                    <form method="POST" action="blacklist" style="display:inline;">
+                                                    <form method="POST" action="blacklist" style="display:inline;" onsubmit="return showBlacklistConfirm(event, 'Bỏ chặn SĐT này?');">
                                                         <input type="hidden" name="action" value="remove">
                                                         <input type="hidden" name="phone" value="${phone}">
-                                                        <button class="btn btn-sm btn-ghost" onclick="return confirm('Bỏ chặn SĐT này?');">Xóa</button>
+                                                        <button class="btn btn-sm btn-ghost">Xóa</button>
                                                     </form>
                                                 </td>
                                             </tr>
@@ -110,5 +110,43 @@
         </div>
     </main>
 </div>
+
+<!-- Custom Confirm Modal -->
+<div class="lf-modal-overlay" id="confirmModal">
+    <div class="lf-modal" style="max-width:400px;">
+        <button class="lf-modal__close" onclick="closeConfirmModal()">&times;</button>
+        <h3 class="lf-modal__title">Xác nhận</h3>
+        <p class="text-sm mb-md" id="confirmText" style="color:var(--txt-primary); margin-top:15px; margin-bottom:20px; font-size:0.95rem;">Bạn chắc chắn muốn thực hiện hành động này?</p>
+        <div class="flex gap-sm mt-sm">
+            <button type="button" class="btn btn-secondary flex-1" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;" onclick="closeConfirmModal()">Hủy</button>
+            <button type="button" class="btn btn-primary flex-1" id="confirmBtn" style="background:#fd7e14; border-color:#fd7e14; color:white;">Đồng ý</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
+<script>
+    let pendingForm = null;
+    function showBlacklistConfirm(event, text) {
+        event.preventDefault();
+        pendingForm = event.target.closest('form');
+        document.getElementById('confirmText').innerText = text;
+        document.getElementById('confirmModal').classList.add('open');
+        return false;
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('open');
+        pendingForm = null;
+    }
+
+    document.getElementById('confirmBtn').addEventListener('click', function() {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+        closeConfirmModal();
+    });
+</script>
 </body>
 </html>

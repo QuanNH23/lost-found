@@ -73,6 +73,14 @@
                     <textarea id="description" name="description" class="lf-textarea" required>${oldDescription}</textarea>
                 </div>
 
+                <div class="lf-form-group">
+                    <label class="lf-label" for="phone">Số điện thoại liên hệ <span class="req">*</span></label>
+                    <input type="text" id="phone" name="phone" class="lf-input" required
+                           value="${oldPhone}" maxlength="10"
+                           placeholder="Vd: 0987654321">
+                    <span id="phoneError" style="color: #ef4444; font-size: 0.85rem; margin-top: 4px; display: none; font-weight: 500;">⚠️ Số điện thoại liên hệ phải bắt đầu bằng số 0!</span>
+                </div>
+
                 <div class="lf-form-row">
                     <div class="lf-form-group">
                         <label class="lf-label" for="category_id">Danh mục <span class="req">*</span></label>
@@ -101,7 +109,8 @@
                 <div class="lf-form-group">
                     <label class="lf-label" for="date_incident">Thời điểm <span class="req">*</span></label>
                     <input type="datetime-local" id="date_incident" name="date_incident"
-                           class="lf-input" value="${oldDateIncident}" required>
+                           class="lf-input" value="${oldDateIncident}" required
+                           oninput="if(this.value && this.value.length >= 16) this.blur();">
                 </div>
 
                 <!-- Existing Images -->
@@ -140,11 +149,67 @@
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
 <script>
     document.getElementById('images').addEventListener('change', function() {
-        var text = this.closest('.lf-file-wrap').querySelector('.lf-file-text');
+        const wrap = this.closest('.lf-file-wrap');
+        if (!wrap) return;
+        const icon = wrap.querySelector('.lf-file-icon');
+        const text = wrap.querySelector('.lf-file-text');
+        
+        let previewDiv = wrap.querySelector('.lf-file-preview-grid');
+        if (previewDiv) previewDiv.remove();
+
         if (this.files.length > 0) {
-            text.textContent = 'Đã chọn: ' + Array.from(this.files).map(f => f.name).join(', ');
+            const names = Array.from(this.files).map(f => f.name).join(', ');
+            if (text) text.textContent = 'Đã chọn: ' + names;
+            if (icon) icon.style.display = 'none';
+
+            previewDiv = document.createElement('div');
+            previewDiv.className = 'lf-file-preview-grid';
+            previewDiv.style.cssText = 'display:flex; justify-content:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;';
+
+            Array.from(this.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #d1d5db;';
+                    previewDiv.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            wrap.insertBefore(previewDiv, text);
+        } else {
+            if (text) text.textContent = 'Nhấn để chọn ảnh';
+            if (icon) icon.style.display = 'block';
         }
     });
+
+    // Phone validation
+    const phoneInput = document.getElementById('phone');
+    const phoneError = document.getElementById('phoneError');
+    if (phoneInput && phoneError) {
+        phoneInput.addEventListener('input', function() {
+            // Keep only numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            if (this.value.length > 0 && this.value[0] !== '0') {
+                phoneError.textContent = '⚠️ Số điện thoại liên hệ phải bắt đầu bằng số 0!';
+                phoneError.style.display = 'block';
+            } else {
+                phoneError.style.display = 'none';
+            }
+        });
+
+        const form = phoneInput.closest('form');
+        form.addEventListener('submit', function(e) {
+            if (phoneInput.value.length !== 10 || phoneInput.value[0] !== '0') {
+                e.preventDefault();
+                phoneError.textContent = '⚠️ Số điện thoại liên hệ phải bắt đầu bằng số 0 và gồm đúng 10 chữ số!';
+                phoneError.style.display = 'block';
+                phoneInput.focus();
+            }
+        });
+    }
 </script>
 </body>
 </html>

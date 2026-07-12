@@ -77,7 +77,14 @@ public class listPublicItemsController extends HttpServlet {
             toDate = null;
         }
 
-        List<Items> items = itemDAO.getItemsByTypeWithFilter(type, categoryId, locationId, fromDate, toDate);
+        String searchKeyword = request.getParameter("search");
+
+        List<Items> items;
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            items = itemDAO.searchItems(searchKeyword.trim(), type, categoryId, locationId);
+        } else {
+            items = itemDAO.getItemsByTypeWithFilter(type, categoryId, locationId, fromDate, toDate);
+        }
         List<Categories> categories = itemDAO.getAllCategories();
         List<Locations> locations = itemDAO.getAllLocations();
 
@@ -89,6 +96,7 @@ public class listPublicItemsController extends HttpServlet {
         request.setAttribute("selectedLocationId", locationId);
         request.setAttribute("fromDate", fromParam);
         request.setAttribute("toDate", toParam);
+        request.setAttribute("searchKeyword", searchKeyword);
 
         request.getRequestDispatcher("/WEB-INF/views/items.jsp").forward(request, response);
     }

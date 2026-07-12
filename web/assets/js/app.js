@@ -124,15 +124,50 @@
     row.style.cursor = 'default';
   });
 
+  // ── Auto-close date time picker on change ─────────────────────
+  document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+    input.addEventListener('change', function () {
+      if (this.value && this.value.length >= 16) {
+         this.blur();
+      }
+    });
+  });
+
   // ── Image preview for file inputs ───────────────────────────
   document.querySelectorAll('input[type="file"][accept*="image"]').forEach(input => {
     input.addEventListener('change', function () {
       const wrap = this.closest('.lf-file-wrap');
       if (!wrap) return;
+      const icon = wrap.querySelector('.lf-file-icon');
       const text = wrap.querySelector('.lf-file-text');
-      if (text && this.files.length > 0) {
+      
+      let previewDiv = wrap.querySelector('.lf-file-preview-grid');
+      if (previewDiv) previewDiv.remove();
+
+      if (this.files.length > 0) {
         const names = Array.from(this.files).map(f => f.name).join(', ');
-        text.textContent = `Đã chọn: ${names}`;
+        if (text) text.textContent = `Đã chọn: ${names}`;
+        if (icon) icon.style.display = 'none';
+
+        previewDiv = document.createElement('div');
+        previewDiv.className = 'lf-file-preview-grid';
+        previewDiv.style.cssText = 'display:flex; justify-content:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;';
+
+        Array.from(this.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid #d1d5db;';
+            previewDiv.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+
+        wrap.insertBefore(previewDiv, text);
+      } else {
+        if (text) text.textContent = 'Nhấn để chọn ảnh';
+        if (icon) icon.style.display = 'block';
       }
     });
   });

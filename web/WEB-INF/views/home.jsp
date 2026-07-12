@@ -112,7 +112,7 @@
                     </div>
                     <ul class="lf-menu" style="list-style:none; padding:12px 0; margin:0;">
                         <li style="padding:4px 16px;">
-                            <a href="${pageContext.request.contextPath}/report_lost?type=lost" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
+                            <a href="${pageContext.request.contextPath}/report_lost" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                 Đăng tin
                             </a>
@@ -168,42 +168,7 @@
                                 </a>
                             </li>
                         </c:forEach>
-                        <li style="padding:4px 16px; border-bottom:1px solid #e5e7eb; padding-bottom:16px; margin-bottom:12px;">
-                            <a href="${pageContext.request.contextPath}/admin/blacklist" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                Danh sách lừa đảo
-                            </a>
-                        </li>
-                        <li style="padding:4px 16px;">
-                            <a href="#" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                Mẹo tìm kiếm
-                            </a>
-                        </li>
-                        <li style="padding:4px 16px;">
-                            <a href="#" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                Giới thiệu
-                            </a>
-                        </li>
-                        <li style="padding:4px 16px;">
-                            <a href="#" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                                Cửa hàng
-                            </a>
-                        </li>
-                        <li style="padding:4px 16px;">
-                            <a href="#" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                Chính sách bảo mật
-                            </a>
-                        </li>
-                        <li style="padding:4px 16px;">
-                            <a href="#" style="display:flex; align-items:center; gap:12px; color:#1f2937; text-decoration:none; padding:8px; border-radius:6px; font-weight:500;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                                Điều khoản sử dụng
-                            </a>
-                        </li>
+
                     </ul>
                 </aside>
 
@@ -244,11 +209,15 @@
                                         <c:set var="firstImg" value="${it.imagesJSON}"/>
                                         <c:if test="${not empty firstImg}">
                                             <!-- parse image path -->
-                                            <c:set var="imgToShow" value="${fn:replace(fn:replace(fn:split(firstImg, ',')[0], '\"', ''), '[', '')}"/>
-                                            <img src="${pageContext.request.contextPath}/${imgToShow}" class="lf-item-card__thumb" alt="Ảnh đồ vật">
+                                            <c:set var="imgToShow" value="${fn:replace(fn:replace(fn:replace(fn:split(firstImg, ',')[0], '\"', ''), '[', ''), ']', '')}"/>
+                                            <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
+                                                <img src="${pageContext.request.contextPath}/${imgToShow}" class="lf-item-card__thumb" alt="Ảnh đồ vật">
+                                            </a>
                                         </c:if>
                                         <c:if test="${empty firstImg}">
-                                            <div class="lf-item-card__thumb-placeholder">📦</div>
+                                            <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
+                                                <div class="lf-item-card__thumb-placeholder">📦</div>
+                                            </a>
                                         </c:if>
                                         
                                         <div class="lf-item-card__body">
@@ -293,11 +262,15 @@
                                         <!-- Thumbnail Image -->
                                         <c:set var="firstImg" value="${it.imagesJSON}"/>
                                         <c:if test="${not empty firstImg}">
-                                            <c:set var="imgToShow" value="${fn:replace(fn:replace(fn:split(firstImg, ',')[0], '\"', ''), '[', '')}"/>
-                                            <img src="${pageContext.request.contextPath}/${imgToShow}" class="lf-item-card__thumb" alt="Ảnh đồ vật">
+                                            <c:set var="imgToShow" value="${fn:replace(fn:replace(fn:replace(fn:split(firstImg, ',')[0], '\"', ''), '[', ''), ']', '')}"/>
+                                            <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
+                                                <img src="${pageContext.request.contextPath}/${imgToShow}" class="lf-item-card__thumb" alt="Ảnh đồ vật">
+                                            </a>
                                         </c:if>
                                         <c:if test="${empty firstImg}">
-                                            <div class="lf-item-card__thumb-placeholder">🟢</div>
+                                            <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
+                                                <div class="lf-item-card__thumb-placeholder">🟢</div>
+                                            </a>
                                         </c:if>
                                         
                                         <div class="lf-item-card__body">
@@ -329,8 +302,16 @@
     </c:choose>
     </main>
 
-    <footer class="lf-footer">
-        © 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.
+    <footer class="lf-footer" style="padding: 24px 0; background: white; border-top: 1px solid var(--clr-border); text-align: center; margin-top: 40px;">
+        <div class="footer-links" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; font-weight: 500;">
+            <a href="${pageContext.request.contextPath}/support" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Hỗ trợ</a>
+            <a href="#" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Mẹo tìm kiếm</a>
+            <a href="#" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Chính sách bảo mật</a>
+            <a href="#" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Điều khoản sử dụng</a>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--txt-muted);">
+            © 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.
+        </div>
     </footer>
 </div>
 

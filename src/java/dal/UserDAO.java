@@ -255,6 +255,20 @@ public class UserDAO extends DBContext {
         }
         return 0;
     }
+    public Users getUserByPhone(String phone) {
+        String sql = "SELECT * FROM Users WHERE phone_number = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapUser(rs);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     private Users mapUser(ResultSet rs) throws Exception {
         Users user = new Users();

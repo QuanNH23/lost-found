@@ -224,7 +224,18 @@ public class editItemController extends HttpServlet {
 
     private void bindOldValues(HttpServletRequest request, Items item) {
         request.setAttribute("oldTitle", item.getTitle());
-        request.setAttribute("oldDescription", item.getDescription());
+        String customPhone = null;
+        String desc = item.getDescription();
+        String cleanDesc = desc;
+        if (desc != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\s*\\[SĐT:\\s*(\\d+)\\]").matcher(desc);
+            if (m.find()) {
+                customPhone = m.group(1);
+                cleanDesc = desc.replace(m.group(0), "");
+            }
+        }
+        request.setAttribute("oldDescription", cleanDesc);
+        request.setAttribute("oldPhone", customPhone);
         request.setAttribute("oldCategoryId", item.getCategoryId());
         request.setAttribute("oldLocationId", item.getLocationId());
         if (item.getDateIncident() != null) {
@@ -281,6 +292,14 @@ public class editItemController extends HttpServlet {
         }
 
         Users currentUser = (Users) session.getAttribute("currentUser");
+
+        // Check if user is blacklisted or deactivated
+        if (!currentUser.isIsActive() || util.ContentFilter.getAllBlacklistPhones().contains(currentUser.getPhoneNumber())) {
+            session.setAttribute("message", "Tài khoản của bạn đã bị khóa hoặc nằm trong danh sách đen, không thể thực hiện sửa bài!");
+            response.sendRedirect("my_items");
+            return;
+        }
+
         Integer itemId = parseInt(request.getParameter("item_id"));
 
         if (itemId == null || itemId <= 0) {
@@ -299,12 +318,14 @@ public class editItemController extends HttpServlet {
 
         String title = request.getParameter("title");
         String description = request.getParameter("description");
+        String phone = request.getParameter("phone");
         String categoryIdRaw = request.getParameter("category_id");
         String locationIdRaw = request.getParameter("location_id");
         String dateIncidentRaw = request.getParameter("date_incident");
 
         request.setAttribute("oldTitle", title);
         request.setAttribute("oldDescription", description);
+        request.setAttribute("oldPhone", phone);
         request.setAttribute("oldCategoryId", categoryIdRaw);
         request.setAttribute("oldLocationId", locationIdRaw);
         request.setAttribute("oldDateIncident", dateIncidentRaw);
@@ -312,7 +333,7 @@ public class editItemController extends HttpServlet {
         request.setAttribute("itemId", existingItem.getItemId());
 
         if (isBlank(title) || isBlank(description) || isBlank(categoryIdRaw)
-                || isBlank(locationIdRaw) || isBlank(dateIncidentRaw)) {
+                || isBlank(locationIdRaw) || isBlank(dateIncidentRaw) || isBlank(phone)) {
             request.setAttribute("ERROR", "Vui long nhap day du thong tin bat buoc.");
             loadReferenceData(request);
             request.getRequestDispatcher("/WEB-INF/views/edit_item.jsp").forward(request, response);
@@ -334,15 +355,28 @@ public class editItemController extends HttpServlet {
 
             String finalImagesJson = newImagesJson != null ? newImagesJson : existingItem.getImagesJSON();
 
+            String fullDescription = description.trim();
+            if (!isBlank(phone)) {
+                fullDescription += "\n\n[SĐT: " + phone.trim() + "]";
+            }
+
             Items updatedItem = new Items();
             updatedItem.setItemId(existingItem.getItemId());
             updatedItem.setUserId(currentUser.getUserId());
             updatedItem.setCategoryId(categoryId);
             updatedItem.setLocationId(locationId);
             updatedItem.setTitle(title.trim());
-            updatedItem.setDescription(description.trim());
+            updatedItem.setDescription(fullDescription);
             updatedItem.setDateIncident(java.sql.Timestamp.valueOf(dateIncident));
             updatedItem.setImagesJSON(finalImagesJson);
+
+            // Recheck content filter on update
+            String violation = util.ContentFilter.scan(updatedItem.getTitle(), updatedItem.getDescription());
+            if (violation != null) {
+                updatedItem.setStatus("processing");
+            } else {
+                updatedItem.setStatus(existingItem.getStatus()); // keep existing status (active / completed)
+            }
 
             boolean updated = dao.updateItemByOwner(updatedItem);
 

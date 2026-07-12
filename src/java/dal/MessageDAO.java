@@ -105,6 +105,22 @@ public class MessageDAO extends DBContext {
         return false;
     }
 
+    public boolean insertAccountNotification(int userId, String title, String content) {
+        if (connection == null) {
+            return false;
+        }
+        String sql = "INSERT INTO Message (user_id, title, message, is_read, related_item_id) VALUES (?, ?, ?, 0, NULL)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, title);
+            ps.setString(3, content);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     // =========================================================
     // 2 HÀM MỚI THÊM CHO TÍNH NĂNG HÒM THƯ (INBOX)
     // =========================================================
@@ -117,12 +133,14 @@ public class MessageDAO extends DBContext {
         String sql = "SELECT m.message_id, m.title, m.message, m.is_read, m.created_at, "
                    + "u.user_id AS sender_id, u.full_name AS sender_name, i.title AS item_title, i.item_id "
                    + "FROM Message m "
-                   + "INNER JOIN Items i ON m.related_item_id = i.item_id "
-                   + "INNER JOIN Users u ON m.user_id = u.user_id "
-                   + "WHERE i.user_id = ? "
+                   + "LEFT JOIN Items i ON m.related_item_id = i.item_id "
+                   + "LEFT JOIN Users u ON m.user_id = u.user_id "
+                   + "WHERE (i.user_id = ? AND m.title = 'Comment' AND m.user_id != i.user_id) "
+                   + "   OR (m.related_item_id IS NULL AND m.user_id = ? AND m.title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected')) "
                    + "ORDER BY m.created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, receiverId);
+            ps.setInt(2, receiverId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> map = new HashMap<>();
@@ -146,10 +164,12 @@ public class MessageDAO extends DBContext {
         if (connection == null) return 0;
         String sql = "SELECT COUNT(m.message_id) "
                    + "FROM Message m "
-                   + "INNER JOIN Items i ON m.related_item_id = i.item_id "
-                   + "WHERE i.user_id = ? AND m.is_read = 0";
+                   + "LEFT JOIN Items i ON m.related_item_id = i.item_id "
+                   + "WHERE (i.user_id = ? AND m.is_read = 0 AND m.user_id != i.user_id AND m.title = 'Comment') "
+                   + "   OR (m.related_item_id IS NULL AND m.user_id = ? AND m.is_read = 0 AND m.title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected'))";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, receiverId);
+            ps.setInt(2, receiverId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);
             }
@@ -167,6 +187,28 @@ public class MessageDAO extends DBContext {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
+    public void markAllInboxMessagesAsRead(int receiverId) {
+        if (connection == null) return;
+        String sql = "UPDATE Message SET is_read = 1 "
+                   + "WHERE (related_item_id IN (SELECT item_id FROM Items WHERE user_id = ?) AND is_read = 0 AND user_id != ?) "
+                   + "   OR (related_item_id IS NULL AND user_id = ? AND is_read = 0 AND title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected'))";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, receiverId);
+            ps.setInt(2, receiverId);
+            ps.setInt(3, receiverId);
+            ps.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    public void markMessageAsReadById(int messageId) {
+        if (connection == null) return;
+        String sql = "UPDATE Message SET is_read = 1 WHERE message_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, messageId);
+            ps.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
     // 2. Lấy danh sách Tin nhắn đã gửi (Outbox)
     public List<Map<String, Object>> getOutbox(int senderId) {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -176,7 +218,7 @@ public class MessageDAO extends DBContext {
                    + "i.title AS item_title, i.item_id "
                    + "FROM Message m "
                    + "LEFT JOIN Items i ON m.related_item_id = i.item_id "
-                   + "WHERE m.user_id = ? "
+                   + "WHERE m.user_id = ? AND m.title = 'Comment' "
                    + "ORDER BY m.created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, senderId);

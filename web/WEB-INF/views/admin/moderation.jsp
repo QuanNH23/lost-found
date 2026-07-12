@@ -69,7 +69,7 @@
                                             <input type="hidden" name="action" value="approve">
                                             <button class="btn btn-sm btn-success">Duyệt lại bài</button>
                                         </form>
-                                        <form method="POST" action="moderation" style="display:inline;" onsubmit="return confirm('Chắc chắn xóa bài này?');">
+                                        <form method="POST" action="moderation" style="display:inline;" onsubmit="return showModConfirm(event, 'Chắc chắn xóa bài này?');">
                                             <input type="hidden" name="itemId" value="${item.itemId}">
                                             <input type="hidden" name="action" value="delete">
                                             <button class="btn btn-sm btn-danger">Xóa bài</button>
@@ -106,7 +106,7 @@
                                             <input type="hidden" name="action" value="approve">
                                             <button class="btn btn-sm btn-success">Giữ lại bài</button>
                                         </form>
-                                        <form method="POST" action="moderation" style="display:inline;" onsubmit="return confirm('Xóa bài vi phạm này?');">
+                                        <form method="POST" action="moderation" style="display:inline;" onsubmit="return showModConfirm(event, 'Xóa bài vi phạm này?');">
                                             <input type="hidden" name="itemId" value="${rep.itemId}">
                                             <input type="hidden" name="action" value="delete">
                                             <button class="btn btn-sm btn-danger">Xóa bài</button>
@@ -124,5 +124,43 @@
         </div>
     </main>
 </div>
+
+<!-- Custom Confirm Modal -->
+<div class="lf-modal-overlay" id="confirmModal">
+    <div class="lf-modal" style="max-width:400px;">
+        <button class="lf-modal__close" onclick="closeConfirmModal()">&times;</button>
+        <h3 class="lf-modal__title">Xác nhận</h3>
+        <p class="text-sm mb-md" id="confirmText" style="color:var(--txt-primary); margin-top:15px; margin-bottom:20px; font-size:0.95rem;">Bạn chắc chắn muốn thực hiện hành động này?</p>
+        <div class="flex gap-sm mt-sm">
+            <button type="button" class="btn btn-secondary flex-1" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;" onclick="closeConfirmModal()">Hủy</button>
+            <button type="button" class="btn btn-primary flex-1" id="confirmBtn" style="background:#fd7e14; border-color:#fd7e14; color:white;">Đồng ý</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
+<script>
+    let pendingForm = null;
+    function showModConfirm(event, text) {
+        event.preventDefault();
+        pendingForm = event.target.closest('form');
+        document.getElementById('confirmText').innerText = text;
+        document.getElementById('confirmModal').classList.add('open');
+        return false;
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('open');
+        pendingForm = null;
+    }
+
+    document.getElementById('confirmBtn').addEventListener('click', function() {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+        closeConfirmModal();
+    });
+</script>
 </body>
 </html>

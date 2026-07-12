@@ -26,8 +26,12 @@ public class inboxController extends HttpServlet {
         List<Map<String, Object>> inbox = msgDAO.getInbox(currentUser.getUserId());
         List<Map<String, Object>> outbox = msgDAO.getOutbox(currentUser.getUserId());
 
+        // Đánh dấu tất cả tin nhắn đến là đã đọc trong DB
+        msgDAO.markAllInboxMessagesAsRead(currentUser.getUserId());
+
         request.setAttribute("inbox", inbox);
         request.setAttribute("outbox", outbox);
+        request.setAttribute("unreadInboxCount", 0);
         request.getRequestDispatcher("/WEB-INF/views/inbox.jsp").forward(request, response);
     }
 

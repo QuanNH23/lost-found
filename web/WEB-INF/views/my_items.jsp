@@ -34,8 +34,7 @@
 
         <!-- Action bar -->
         <div class="flex flex-wrap gap-md mb-lg">
-            <a href="${pageContext.request.contextPath}/report_lost?type=lost" class="btn btn-danger">🔴 Thêm báo mất mới</a>
-            <a href="${pageContext.request.contextPath}/report_found"          class="btn btn-success">🟢 Thêm báo nhặt mới</a>
+            <a href="${pageContext.request.contextPath}/report_lost" class="btn btn-primary">📤 Đăng tin mới</a>
         </div>
 
         <!-- LOST ITEMS -->
@@ -49,23 +48,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach var="it" items="${lostMyItems}">
-                        <tr>
-                            <td><span class="badge badge-muted">#${it.itemId}</span></td>
-                            <td class="fw-bold">${it.title}</td>
+                    <c:forEach var="it" items="${lostMyItems}" varStatus="status">
+                        <tr onclick="handleRowClick(event, '${pageContext.request.contextPath}/item_detail?id=${it.itemId}')">
+                            <td><span class="badge badge-muted">#${status.count}</span></td>
+                            <td class="fw-bold">
+                                <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="color:var(--txt-primary); text-decoration:none;" onmouseover="this.style.textDecoration='underline'; this.style.color='var(--clr-primary)';" onmouseout="this.style.textDecoration='none'; this.style.color='var(--txt-primary)';">${it.title}</a>
+                            </td>
                             <td>${categoryNames[it.itemId]}</td>
                             <td>${locationNames[it.itemId]}</td>
-                            <td><span class="badge badge-danger">🔴 ${it.type}</span></td>
+                            <td><span class="badge badge-danger">${it.type.toUpperCase()}</span></td>
                             <td>
                                 <lf:statusBadge status="${it.status}" />
                             </td>
-                            <td class="text-sm" style="color: white;">${it.createdAt}</td>
+                            <td class="text-sm" style="color: var(--txt-primary);">${it.createdAt}</td>
                             <td>
                                 <div class="flex gap-sm flex-wrap">
-                                    <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" class="btn btn-secondary btn-sm">🔍 Xem</a>
                                     <a href="${pageContext.request.contextPath}/edit_item?id=${it.itemId}"   class="btn btn-ghost btn-sm">✏️ Sửa</a>
+                                    <c:if test="${it.status eq 'active'}">
+                                        <form action="${pageContext.request.contextPath}/my_items" method="post"
+                                              onsubmit="return showMyItemsConfirm(event, 'Xác nhận đã nhận lại được đồ vật này?');" style="display:inline;">
+                                            <input type="hidden" name="action"  value="complete">
+                                            <input type="hidden" name="item_id" value="${it.itemId}">
+                                            <button type="submit" class="btn btn-success btn-sm">✅ Đã nhận</button>
+                                        </form>
+                                    </c:if>
                                     <form action="${pageContext.request.contextPath}/my_items" method="post"
-                                          onsubmit="return confirm('Bạn chắc chắn muốn xóa bài đăng này?');" style="display:inline;">
+                                          onsubmit="return showMyItemsConfirm(event, 'Bạn chắc chắn muốn xóa bài đăng này?');" style="display:inline;">
                                         <input type="hidden" name="action"  value="delete">
                                         <input type="hidden" name="item_id" value="${it.itemId}">
                                         <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
@@ -92,23 +100,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach var="it" items="${foundMyItems}">
-                        <tr>
-                            <td><span class="badge badge-muted">#${it.itemId}</span></td>
-                            <td class="fw-bold">${it.title}</td>
+                    <c:forEach var="it" items="${foundMyItems}" varStatus="status">
+                        <tr onclick="handleRowClick(event, '${pageContext.request.contextPath}/item_detail?id=${it.itemId}')">
+                            <td><span class="badge badge-muted">#${status.count}</span></td>
+                            <td class="fw-bold">
+                                <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="color:var(--txt-primary); text-decoration:none;" onmouseover="this.style.textDecoration='underline'; this.style.color='var(--clr-primary)';" onmouseout="this.style.textDecoration='none'; this.style.color='var(--txt-primary)';">${it.title}</a>
+                            </td>
                             <td>${categoryNames[it.itemId]}</td>
                             <td>${locationNames[it.itemId]}</td>
-                            <td><span class="badge badge-success">🟢 ${it.type}</span></td>
+                            <td><span class="badge badge-success">${it.type.toUpperCase()}</span></td>
                             <td>
                                 <lf:statusBadge status="${it.status}" />
                             </td>
-                            <td class="text-sm" style="color: white;">${it.createdAt}</td>
+                            <td class="text-sm" style="color: var(--txt-primary);">${it.createdAt}</td>
                             <td>
                                 <div class="flex gap-sm flex-wrap">
-                                    <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" class="btn btn-secondary btn-sm">🔍 Xem</a>
                                     <a href="${pageContext.request.contextPath}/edit_item?id=${it.itemId}"   class="btn btn-ghost btn-sm">✏️ Sửa</a>
+                                    <c:if test="${it.status eq 'active'}">
+                                        <form action="${pageContext.request.contextPath}/my_items" method="post"
+                                              onsubmit="return showMyItemsConfirm(event, 'Xác nhận đã trả lại đồ vật này cho người mất?');" style="display:inline;">
+                                            <input type="hidden" name="action"  value="complete">
+                                            <input type="hidden" name="item_id" value="${it.itemId}">
+                                            <button type="submit" class="btn btn-success btn-sm">🤝 Đã trả</button>
+                                        </form>
+                                    </c:if>
                                     <form action="${pageContext.request.contextPath}/my_items" method="post"
-                                          onsubmit="return confirm('Bạn chắc chắn muốn xóa bài đăng này?');" style="display:inline;">
+                                          onsubmit="return showMyItemsConfirm(event, 'Bạn chắc chắn muốn xóa bài đăng này?');" style="display:inline;">
                                         <input type="hidden" name="action"  value="delete">
                                         <input type="hidden" name="item_id" value="${it.itemId}">
                                         <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
@@ -126,7 +143,59 @@
     </main>
     <footer class="lf-footer">© 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.</footer>
 </div>
+
+<!-- Custom Confirm Modal -->
+<div class="lf-modal-overlay" id="confirmModal">
+    <div class="lf-modal" style="max-width:400px;">
+        <button class="lf-modal__close" onclick="closeConfirmModal()">&times;</button>
+        <h3 class="lf-modal__title">Xác nhận</h3>
+        <p class="text-sm mb-md" id="confirmText" style="color:var(--txt-primary); margin-top:15px; margin-bottom:20px; font-size:0.95rem;">Bạn chắc chắn muốn thực hiện hành động này?</p>
+        <div class="flex gap-sm mt-sm">
+            <button type="button" class="btn btn-secondary flex-1" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;" onclick="closeConfirmModal()">Hủy</button>
+            <button type="button" class="btn btn-primary flex-1" id="confirmBtn" style="background:#fd7e14; border-color:#fd7e14; color:white;">Đồng ý</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
+<script>
+    let pendingForm = null;
+    function showMyItemsConfirm(event, text) {
+        event.preventDefault();
+        pendingForm = event.target.closest('form');
+        document.getElementById('confirmText').innerText = text;
+        document.getElementById('confirmModal').classList.add('open');
+        return false;
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('open');
+        pendingForm = null;
+    }
+
+    document.getElementById('confirmBtn').addEventListener('click', function() {
+        if (pendingForm) {
+            pendingForm.submit();
+        }
+        closeConfirmModal();
+    });
+
+    function handleRowClick(event, url) {
+        if (event.target.closest('button') || event.target.closest('a') || event.target.closest('form')) {
+            return;
+        }
+        window.location.href = url;
+    }
+</script>
+<style>
+    .lf-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+    .lf-table tbody tr:hover {
+        background-color: #f8fafc !important;
+    }
+</style>
 </body>
 </html>
