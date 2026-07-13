@@ -69,11 +69,13 @@ public class itemDetailController extends HttpServlet {
         }
 
         MessageDAO messageDAO = new MessageDAO();
-        // Mark as read any unread messages sent TO the current user for this item
-        messageDAO.markMessagesAsRead(itemId, currentUser.getUserId());
-        
-        // Immediately update the unread count in the request so the navbar shows the updated number
-        request.setAttribute("unreadInboxCount", messageDAO.countUnreadInbox(currentUser.getUserId()));
+        if (currentUser != null) {
+            // Mark as read any unread messages sent TO the current user for this item
+            messageDAO.markMessagesAsRead(itemId, currentUser.getUserId());
+            
+            // Immediately update the unread count in the request so the navbar shows the updated number
+            request.setAttribute("unreadInboxCount", messageDAO.countUnreadInbox(currentUser.getUserId()));
+        }
         
         List<Message> allMessages = messageDAO.getMessagesByItemId(itemId);
         List<Message> itemMessages = new ArrayList<>();
@@ -82,7 +84,7 @@ public class itemDetailController extends HttpServlet {
                 itemMessages.add(msg);
             }
         }
-        boolean isItemOwner = currentUser.getUserId() == itemDetail.getUserId();
+        boolean isItemOwner = currentUser != null && currentUser.getUserId() == itemDetail.getUserId();
 
         ClaimDAO claimDAO = new ClaimDAO();
         List<Claims> claims = claimDAO.getClaimsByItemId(itemId);
@@ -132,15 +134,12 @@ public class itemDetailController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
-            response.sendRedirect("login");
-            return;
-        }
+        Users currentUser = (session != null) ? (Users) session.getAttribute("currentUser") : null;
         try {
             int itemId = Integer.parseInt(request.getParameter("id"));
-            forwardDetail(itemId, request, response, (Users) session.getAttribute("currentUser"));
+            forwardDetail(itemId, request, response, currentUser);
         } catch (Exception e) {
-            response.sendRedirect("my_items");
+            response.sendRedirect("home");
         }
     }
 

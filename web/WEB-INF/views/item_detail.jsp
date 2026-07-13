@@ -260,7 +260,14 @@
         <div class="lf-breadcrumb">
             <a href="${pageContext.request.contextPath}/home">Trang chủ</a>
             <span class="sep">›</span>
-            <a href="${pageContext.request.contextPath}/my_items">Tin của tôi</a>
+            <c:choose>
+                <c:when test="${not empty sessionScope.currentUser}">
+                    <a href="${pageContext.request.contextPath}/my_items">Tin của tôi</a>
+                </c:when>
+                <c:otherwise>
+                    <a href="${pageContext.request.contextPath}/items?type=lost">Danh sách tin</a>
+                </c:otherwise>
+            </c:choose>
             <span class="sep">›</span>
             <span class="current">Chi tiết bài đăng</span>
         </div>
@@ -348,10 +355,15 @@
                         </c:choose>
                     </div>
                     
-                    <!-- Phone Button clickable -->
-                    <c:if test="${not empty itemOwnerPhone}">
+                    <!-- Phone Button clickable (only for logged-in users) -->
+                    <c:if test="${not empty sessionScope.currentUser && not empty itemOwnerPhone}">
                         <a href="tel:${itemOwnerPhone}" class="btn-phone-call">
                             📞 ${itemOwnerPhone}
+                        </a>
+                    </c:if>
+                    <c:if test="${empty sessionScope.currentUser && not empty itemOwnerPhone}">
+                        <a href="${pageContext.request.contextPath}/login" class="btn-phone-call" style="text-decoration:none;">
+                            📞 Đăng nhập để xem SĐT
                         </a>
                     </c:if>
                 </div>
@@ -364,16 +376,26 @@
                     <h3 class="lf-section-title mb-md" style="border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Bình luận</h3>
                     
                     <!-- Comment Input Box -->
-                    <form action="${pageContext.request.contextPath}/item_detail" method="post" class="lf-form mb-lg" style="background:#f8fafc; padding:16px; border-radius:8px; border:1px solid #e2e8f0;">
-                        <input type="hidden" name="action" value="send_message">
-                        <input type="hidden" name="item_id" value="${itemDetail.itemId}">
-                        <div class="lf-form-group mb-sm">
-                            <textarea name="message" class="lf-textarea" style="background:white; min-height:80px; border-radius:6px;" placeholder="Viết bình luận..." required minlength="2"></textarea>
-                        </div>
-                        <div style="text-align:right;">
-                            <button type="submit" class="btn btn-primary btn-sm" style="background:#0284c7; border-color:#0284c7; padding:6px 20px;">Đăng</button>
-                        </div>
-                    </form>
+                    <c:choose>
+                        <c:when test="${not empty sessionScope.currentUser}">
+                            <form action="${pageContext.request.contextPath}/item_detail" method="post" class="lf-form mb-lg" style="background:#f8fafc; padding:16px; border-radius:8px; border:1px solid #e2e8f0;">
+                                <input type="hidden" name="action" value="send_message">
+                                <input type="hidden" name="item_id" value="${itemDetail.itemId}">
+                                <div class="lf-form-group mb-sm">
+                                    <textarea name="message" class="lf-textarea" style="background:white; min-height:80px; border-radius:6px;" placeholder="Viết bình luận..." required minlength="2"></textarea>
+                                </div>
+                                <div style="text-align:right;">
+                                    <button type="submit" class="btn btn-primary btn-sm" style="background:#0284c7; border-color:#0284c7; padding:6px 20px;">Đăng</button>
+                                </div>
+                            </form>
+                        </c:when>
+                        <c:otherwise>
+                            <div style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #e2e8f0; text-align:center; margin-bottom:20px;">
+                                <p style="color:#64748b; margin:0 0 10px 0; font-size:0.95rem;">🔒 Vui lòng đăng nhập để gửi bình luận hoặc liên hệ.</p>
+                                <a href="${pageContext.request.contextPath}/login" class="btn btn-primary btn-sm" style="background:#0284c7; border-color:#0284c7; padding:6px 24px; text-decoration:none; color:white; border-radius:6px;">Đăng nhập ngay</a>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
 
                     <!-- Comments List -->
                     <div class="lf-comments-list">
@@ -442,7 +464,7 @@
         </c:if>
     </main>
 
-    <footer class="lf-footer">© 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.</footer>
+    <lf:footer />
 </div>
 <!-- Report Modal -->
 <div class="lf-modal-overlay" id="reportModal">
@@ -518,3 +540,4 @@
 </script>
 </body>
 </html>
+

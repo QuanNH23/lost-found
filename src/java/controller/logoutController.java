@@ -60,7 +60,7 @@ public class logoutController extends HttpServlet {
         if (session != null) {
             session.invalidate();
         }
-        response.sendRedirect("login");
+        response.sendRedirect(request.getContextPath() + "/home");
     }
 
     /**

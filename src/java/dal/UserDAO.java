@@ -29,10 +29,14 @@ public class UserDAO extends DBContext {
     }
 
     public boolean checkDuplicate(String username, String email) {
-        String sql = "SELECT TOP 1 username FROM Users WHERE username = ? OR email = ?";
+        String sql = (email == null || email.trim().isEmpty())
+                ? "SELECT TOP 1 username FROM Users WHERE username = ?"
+                : "SELECT TOP 1 username FROM Users WHERE username = ? OR email = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, username);
-            ps.setString(2, email);
+            if (email != null && !email.trim().isEmpty()) {
+                ps.setString(2, email.trim());
+            }
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -56,6 +60,15 @@ public class UserDAO extends DBContext {
             ps.setString(5, user.getPhoneNumber());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            try {
+                java.io.FileWriter fw = new java.io.FileWriter("d:/prj301/new_prj/SE2022_Nhom08_DeTai09/DUAN/ProjectPRJ301/db_error.log", true);
+                java.io.PrintWriter pw = new java.io.PrintWriter(fw);
+                pw.println("--- ERROR AT " + new java.util.Date() + " ---");
+                e.printStackTrace(pw);
+                pw.close();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
             e.printStackTrace();
         }
         return false;
@@ -78,8 +91,8 @@ public class UserDAO extends DBContext {
     }
 
     public void addUser(Users user) {
-        String sql = "INSERT INTO Users(username,password,full_name,email,phone_number,role,is_active) "
-                + "VALUES(?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO Users(username,password,full_name,email,phone_number,role,is_active,avatar_url) "
+                + "VALUES(?,?,?,?,?,?,?,?)";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, user.getUsername());
@@ -89,6 +102,7 @@ public class UserDAO extends DBContext {
             ps.setString(5, user.getPhoneNumber());
             ps.setString(6, user.getRole());
             ps.setBoolean(7, user.isIsActive());
+            ps.setString(8, user.getAvatarUrl());
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -190,11 +204,17 @@ public class UserDAO extends DBContext {
     }
 
     public boolean checkDuplicateExcept(int userId, String username, String email) {
-        String sql = "SELECT TOP 1 user_id FROM Users WHERE (username = ? OR email = ?) AND user_id <> ?";
+        String sql = (email == null || email.trim().isEmpty())
+                ? "SELECT TOP 1 user_id FROM Users WHERE username = ? AND user_id <> ?"
+                : "SELECT TOP 1 user_id FROM Users WHERE (username = ? OR email = ?) AND user_id <> ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, username);
-            ps.setString(2, email);
-            ps.setInt(3, userId);
+            if (email != null && !email.trim().isEmpty()) {
+                ps.setString(2, email.trim());
+                ps.setInt(3, userId);
+            } else {
+                ps.setInt(2, userId);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -204,26 +224,45 @@ public class UserDAO extends DBContext {
         return false;
     }
 
-    public boolean updateUserProfile(int userId, String fullName, String email, String phoneNumber, String newPasswordOrNull) {
+    public boolean updateUserProfile(int userId, String username, String fullName, String email, String phoneNumber, String avatarUrl, String newPasswordOrNull) {
         if (connection == null) {
             return false;
         }
 
         String sql = (newPasswordOrNull == null)
-                ? "UPDATE Users SET full_name = ?, email = ?, phone_number = ? WHERE user_id = ?"
-                : "UPDATE Users SET full_name = ?, email = ?, phone_number = ?, password = ? WHERE user_id = ?";
+                ? "UPDATE Users SET username = ?, full_name = ?, email = ?, phone_number = ?, avatar_url = ? WHERE user_id = ?"
+                : "UPDATE Users SET username = ?, full_name = ?, email = ?, phone_number = ?, avatar_url = ?, password = ? WHERE user_id = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, fullName);
-            ps.setString(2, email);
-            ps.setString(3, phoneNumber);
+            ps.setString(1, username);
+            ps.setString(2, fullName);
+            ps.setString(3, email);
+            ps.setString(4, phoneNumber);
+            ps.setString(5, avatarUrl);
             if (newPasswordOrNull == null) {
-                ps.setInt(4, userId);
+                ps.setInt(6, userId);
             } else {
-                ps.setString(4, newPasswordOrNull);
-                ps.setInt(5, userId);
+                ps.setString(6, newPasswordOrNull);
+                ps.setInt(7, userId);
             }
             return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean checkDuplicateUsernameExcept(int userId, String username) {
+        if (connection == null) return false;
+        String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND user_id != ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setInt(2, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -278,6 +317,7 @@ public class UserDAO extends DBContext {
         user.setFullName(rs.getString("full_name"));
         user.setEmail(rs.getString("email"));
         user.setPhoneNumber(rs.getString("phone_number"));
+        user.setAvatarUrl(rs.getString("avatar_url"));
         user.setRole(rs.getString("role"));
         user.setIsActive(rs.getBoolean("is_active"));
         try {

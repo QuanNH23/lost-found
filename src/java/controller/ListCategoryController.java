@@ -52,7 +52,6 @@ public class ListCategoryController extends HttpServlet {
     /**
      * Handles the HTTP <code>GET</code> method.
      *
-     * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
@@ -60,21 +59,9 @@ public class ListCategoryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        CategoryDAO c = new CategoryDAO();
-        List<Categories> list = c.getAllCategories();
-        request.setAttribute("data", list);
-        request.getRequestDispatcher("/WEB-INF/views/listCategory.jsp").forward(request, response);
-        
+        response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=categories");
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

@@ -10,6 +10,7 @@ public class Users {
     private String fullName;
     private String email;
     private String phoneNumber;
+    private String avatarUrl;
     private String role;
     private boolean isActive;
     private Date createdAt;
@@ -24,9 +25,18 @@ public class Users {
         this.fullName = fullName;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.avatarUrl = avatarUrl;
         this.role = role;
         this.isActive = isActive;
         this.createdAt = createdAt;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
 
@@ -104,7 +114,7 @@ public class Users {
 
     @Override
     public String toString() {
-        return "Users{" + "userId=" + userId + ", username=" + username + ", password=" + password + ", fullName=" + fullName + ", email=" + email + ", phoneNumber=" + phoneNumber + ", role=" + role + ", isActive=" + isActive + ", createdAt=" + createdAt + '}';
+        return "Users{" + "userId=" + userId + ", username=" + username + ", password=" + password + ", fullName=" + fullName + ", email=" + email + ", phoneNumber=" + phoneNumber + ", avatarUrl=" + avatarUrl + ", role=" + role + ", isActive=" + isActive + ", createdAt=" + createdAt + '}';
     }
     
     

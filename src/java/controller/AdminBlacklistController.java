@@ -30,8 +30,21 @@ public class AdminBlacklistController extends HttpServlet {
         List<String> badWords = ContentFilter.getAllBadWords();
         List<String> blacklistPhones = ContentFilter.getAllBlacklistPhones();
 
+        dal.UserDAO userDAO = new dal.UserDAO();
+        java.util.Map<String, String> phoneOwnerMap = new java.util.HashMap<>();
+        try {
+            for (model.Users u : userDAO.getAllUsers()) {
+                if (u.getPhoneNumber() != null && !u.getPhoneNumber().trim().isEmpty()) {
+                    phoneOwnerMap.put(u.getPhoneNumber().trim(), u.getUsername());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         request.setAttribute("badWords", badWords);
         request.setAttribute("blacklistPhones", blacklistPhones);
+        request.setAttribute("phoneOwnerMap", phoneOwnerMap);
         
         request.getRequestDispatcher("/WEB-INF/views/admin/blacklist.jsp").forward(request, response);
     }
@@ -50,6 +63,7 @@ public class AdminBlacklistController extends HttpServlet {
 
         String action = request.getParameter("action");
         String phone = request.getParameter("phone");
+        String word = request.getParameter("word");
         String appRealPath = getServletContext().getRealPath("/");
 
         if ("add".equals(action) && phone != null && !phone.trim().isEmpty()) {
@@ -68,6 +82,12 @@ public class AdminBlacklistController extends HttpServlet {
                 new dal.MessageDAO().insertAccountNotification(u.getUserId(), "Account", "Số điện thoại " + phone.trim() + " của bạn đã được xóa khỏi danh sách đen (Blacklist).");
             }
             session.setAttribute("message", "Da xoa khoi blacklist va khoi phuc cac bai dang.");
+        } else if ("add_word".equals(action) && word != null && !word.trim().isEmpty()) {
+            ContentFilter.addBadWord(word.trim(), appRealPath);
+            session.setAttribute("message", "Đã thêm từ cấm mới thành công.");
+        } else if ("remove_word".equals(action) && word != null && !word.trim().isEmpty()) {
+            ContentFilter.removeBadWord(word.trim(), appRealPath);
+            session.setAttribute("message", "Đã xóa từ cấm thành công.");
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/blacklist");

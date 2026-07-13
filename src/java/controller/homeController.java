@@ -101,12 +101,6 @@ public class homeController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
-            response.sendRedirect("login");
-            return;
-        }
-
         ItemDAO itemDAO = new ItemDAO();
         UserDAO userDAO = new UserDAO();
         LocationDAO locationDAO = new LocationDAO();
@@ -143,6 +137,17 @@ public class homeController extends HttpServlet {
             }
         }
 
+        int pendingSupports = 0;
+        dal.SupportRequestDAO supportDAO = new dal.SupportRequestDAO();
+        for (model.SupportRequest sr : supportDAO.getAllSupportRequests()) {
+            if ("processing".equalsIgnoreCase(sr.getStatus())) {
+                pendingSupports++;
+            }
+        }
+
+        dal.MessageDAO msgDao = new dal.MessageDAO();
+        int pendingModerations = pendingItems + msgDao.getReportedItems().size();
+
         request.setAttribute("lostItems", lostItems);
         request.setAttribute("foundItems", foundItems);
         request.setAttribute("latestLostItems", latestLostItems);
@@ -152,12 +157,10 @@ public class homeController extends HttpServlet {
         request.setAttribute("ownerNames", buildOwnerNameMap(allItems, userDAO.getAllUsers()));
         request.setAttribute("locationNames", buildLocationNameMap(allItems, locationDAO.getAllLocations()));
         request.setAttribute("totalUsers", userDAO.getTotalUsers());
-        request.setAttribute("totalLostItems", userDAO.getTotalLostItems());
+        request.setAttribute("totalLostItems", lostItems.size());
         request.setAttribute("totalFoundItems", foundItems.size());
-        request.setAttribute("totalCompletedItems", totalCompletedItems);
-        request.setAttribute("totalProcessingItems", totalProcessingItems);
-        request.setAttribute("pendingItemsCount", pendingItems);
-        request.setAttribute("pendingClaimsCount", pendingClaims);
+        request.setAttribute("pendingModerationsCount", pendingModerations);
+        request.setAttribute("pendingSupportsCount", pendingSupports);
 
         request.setAttribute("categories", categories);
         request.setAttribute("locations", locations);

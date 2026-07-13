@@ -62,7 +62,7 @@ public class DeleteCategoryController extends HttpServlet {
             id=Integer.parseInt(id_raw);
             CategoryDAO c = new CategoryDAO();
             c.deleteCategory(id);
-            response.sendRedirect("manage_categories");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=categories");
         } catch (NumberFormatException e) {
             
         }

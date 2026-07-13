@@ -67,10 +67,23 @@ public class ReportController extends HttpServlet {
             );
 
             if (reported) {
-                // 3. Auto-hide logic: if >= 3 reports, change status to suspended
+                // 3. Auto-hide logic: if >= 3 reports, change status to processing
                 int reportCount = msgDao.countReportsByItemId(itemId);
                 if (reportCount >= 3) {
                     itemDao.updateItemStatus(itemId, "processing");
+                }
+                
+                // 4. Auto-lock owner logic: if total reports on owner's items >= 3, lock account
+                int ownerId = item.getUserId();
+                int totalOwnerReports = msgDao.countTotalReportsByUserId(ownerId);
+                if (totalOwnerReports >= 3) {
+                    dal.UserDAO uDao = new dal.UserDAO();
+                    model.Users owner = uDao.getUserById(ownerId);
+                    if (owner != null && owner.isIsActive()) {
+                        uDao.updateUserRoleAndStatus(ownerId, owner.getRole(), false);
+                        // Send system notification
+                        msgDao.insertAccountNotification(ownerId, "Account", "Tài khoản của bạn đã bị khóa tự động do nhận quá 3 lượt báo cáo vi phạm cộng đồng.");
+                    }
                 }
                 
                 session.setAttribute("message", "Bao cao thanh cong. Cam on ban da gop phan giu sach cong dong.");

@@ -58,19 +58,36 @@ public class LocationDAO extends DBContext {
         }
     }
 
-    public void deleteLocations(int id) {
-        String sql = "DELETE FROM Locations WHERE location_id=?";
-
+    public boolean deleteLocations(int id) {
         try {
+            // Xóa claims liên quan tới items thuộc vị trí này
+            String sqlClaims = "DELETE FROM Claims WHERE item_id IN (SELECT item_id FROM Items WHERE location_id=?)";
+            PreparedStatement psClaims = connection.prepareStatement(sqlClaims);
+            psClaims.setInt(1, id);
+            psClaims.executeUpdate();
 
+            // Xóa messages (bao gồm cả reports) liên quan tới items thuộc vị trí này
+            String sqlReports = "DELETE FROM Message WHERE related_item_id IN (SELECT item_id FROM Items WHERE location_id=?)";
+            PreparedStatement psReports = connection.prepareStatement(sqlReports);
+            psReports.setInt(1, id);
+            psReports.executeUpdate();
+
+            // Xóa items thuộc vị trí này
+            String sqlItems = "DELETE FROM Items WHERE location_id=?";
+            PreparedStatement psItems = connection.prepareStatement(sqlItems);
+            psItems.setInt(1, id);
+            psItems.executeUpdate();
+
+            // Cuối cùng xóa vị trí
+            String sql = "DELETE FROM Locations WHERE location_id=?";
             PreparedStatement ps = connection.prepareStatement(sql);
-
             ps.setInt(1, id);
-
             ps.executeUpdate();
 
+            return true;
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println("Delete Location Error: " + e);
+            return false;
         }
     }
 

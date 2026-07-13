@@ -23,6 +23,10 @@ public class SupportController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
+        if ("admin".equalsIgnoreCase(currentUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
         
         request.getRequestDispatcher("/WEB-INF/views/support.jsp").forward(request, response);
     }
@@ -34,6 +38,10 @@ public class SupportController extends HttpServlet {
         Users currentUser = (session != null) ? (Users) session.getAttribute("currentUser") : null;
         if (currentUser == null) {
             response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        if ("admin".equalsIgnoreCase(currentUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
@@ -58,7 +66,11 @@ public class SupportController extends HttpServlet {
         req.setReason(reason);
         req.setEmail(email.trim());
         req.setPhone(phone.trim());
-        req.setImageUrl(imageUrl != null ? imageUrl.trim() : "");
+        String imgUrlTrim = (imageUrl != null) ? imageUrl.trim() : "";
+        if (!imgUrlTrim.isEmpty() && !imgUrlTrim.startsWith("http://") && !imgUrlTrim.startsWith("https://") && !imgUrlTrim.startsWith("/")) {
+            imgUrlTrim = "";
+        }
+        req.setImageUrl(imgUrlTrim);
         req.setDescription(description.trim());
 
         SupportRequestDAO dao = new SupportRequestDAO();

@@ -44,16 +44,16 @@
         </c:if>
 
         <!-- Form -->
-        <form action="${pageContext.request.contextPath}/login" method="post" class="lf-form" novalidate>
+        <form action="${pageContext.request.contextPath}/login" method="post" class="lf-form" novalidate autocomplete="off">
             <div class="lf-form-group">
                 <label class="lf-label" for="username">Tên đăng nhập</label>
                 <input type="text" id="username" name="username" class="lf-input"
-                       placeholder="Nhập tên đăng nhập" required autocomplete="username">
+                       placeholder="Nhập tên đăng nhập" required autocomplete="new-password">
             </div>
             <div class="lf-form-group">
                 <label class="lf-label" for="password">Mật khẩu</label>
                 <input type="password" id="password" name="password" class="lf-input"
-                       placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                       placeholder="Nhập mật khẩu" required autocomplete="new-password">
             </div>
             <button type="submit" class="btn btn-vibrant btn-lg btn-full" style="margin-top:8px;">
                 Đăng nhập

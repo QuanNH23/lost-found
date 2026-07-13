@@ -64,7 +64,7 @@ public class DeleteLocationController extends HttpServlet {
             id = Integer.parseInt(id_raw);
             LocationDAO l = new LocationDAO();
             l.deleteLocations(id);
-            response.sendRedirect("manage_locations");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=locations");
         } catch (NumberFormatException e) {
 
         }

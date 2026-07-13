@@ -67,7 +67,7 @@ public class DeleteUserController extends HttpServlet {
 
             if (currentUser != null && currentUser.getUserId() == id) {
                 session.setAttribute("userDeleteError", "Ban khong the xoa chinh tai khoan dang dang nhap.");
-                response.sendRedirect("manage_users");
+                response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=users");
                 return;
             }
 
@@ -78,10 +78,10 @@ public class DeleteUserController extends HttpServlet {
                 session.setAttribute("userDeleteError", "Khong the xoa tai khoan nay. Vui long kiem tra du lieu lien quan.");
             }
 
-            response.sendRedirect("manage_users");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=users");
         } catch (NumberFormatException e) {
             session.setAttribute("userDeleteError", "ID nguoi dung khong hop le.");
-            response.sendRedirect("manage_users");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=users");
         }
     } 
 

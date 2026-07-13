@@ -143,7 +143,7 @@
             </form>
         </div>
     </main>
-    <footer class="lf-footer">© 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.</footer>
+    <lf:footer />
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
@@ -156,6 +156,14 @@
         
         let previewDiv = wrap.querySelector('.lf-file-preview-grid');
         if (previewDiv) previewDiv.remove();
+
+        if (this.files.length > 5) {
+            alert("Bạn chỉ được chọn tối đa 5 hình ảnh cho mỗi bài viết.");
+            this.value = '';
+            if (text) text.textContent = 'Nhấn để chọn ảnh';
+            if (icon) icon.style.display = 'block';
+            return;
+        }
 
         if (this.files.length > 0) {
             const names = Array.from(this.files).map(f => f.name).join(', ');
@@ -213,3 +221,4 @@
 </script>
 </body>
 </html>
+

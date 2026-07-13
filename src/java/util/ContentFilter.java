@@ -178,4 +178,18 @@ public class ContentFilter {
             return false;
         }
     }
+
+    public static synchronized boolean addBadWord(String word, String appRealPath) {
+        String cleanWord = word != null ? word.trim() : "";
+        if (cleanWord.isEmpty()) return false;
+        BAD_WORDS.add(cleanWord);
+        return persistToFile("badwords.txt", BAD_WORDS, appRealPath);
+    }
+
+    public static synchronized boolean removeBadWord(String word, String appRealPath) {
+        String cleanWord = word != null ? word.trim() : "";
+        if (cleanWord.isEmpty()) return false;
+        BAD_WORDS.remove(cleanWord);
+        return persistToFile("badwords.txt", BAD_WORDS, appRealPath);
+    }
 }

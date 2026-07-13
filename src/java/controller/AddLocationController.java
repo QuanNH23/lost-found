@@ -35,7 +35,7 @@ public class AddLocationController extends HttpServlet {
         try {
             LocationDAO dao = new LocationDAO();
             dao.addLocation(new Locations(0, name.trim()));
-            response.sendRedirect("manage_locations");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=locations");
         } catch (Exception e) {
             request.setAttribute("error", "Khong the them vi tri.");
             request.getRequestDispatcher("/WEB-INF/views/addLocation.jsp").forward(request, response);

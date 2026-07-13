@@ -77,10 +77,7 @@ public class ListUserController extends HttpServlet {
             }
         }
 
-        UserDAO u = new UserDAO();
-        List<Users> list = u.getAllUsers();
-        request.setAttribute("data", list);
-        request.getRequestDispatcher("/WEB-INF/views/listUser.jsp").forward(request, response);
+        response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=users");
     }
 
     /**

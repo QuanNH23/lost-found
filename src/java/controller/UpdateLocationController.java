@@ -101,7 +101,7 @@ public class UpdateLocationController extends HttpServlet {
             cdb.updateLocation(cNew);
 
             // 5. Chuyển hướng về trang danh sách (đảm bảo urlPatterns "manage_categories" là đúng)
-            response.sendRedirect("manage_locations");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=locations");
         } catch (Exception e) {
             System.out.println("Update Error: " + e);
         }

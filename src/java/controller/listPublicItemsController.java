@@ -20,16 +20,12 @@ public class listPublicItemsController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
-            response.sendRedirect("login");
-            return;
-        }
-
         String typeParam = request.getParameter("type");
         String type;
         if ("found".equalsIgnoreCase(typeParam)) {
             type = "found";
+        } else if ("all".equalsIgnoreCase(typeParam)) {
+            type = "all";
         } else {
             type = "lost";
         }
@@ -78,17 +74,46 @@ public class listPublicItemsController extends HttpServlet {
         }
 
         String searchKeyword = request.getParameter("search");
+        // When type is "all", pass null to DAO so it searches both lost and found
+        String daoType = "all".equals(type) ? null : type;
 
         List<Items> items;
         if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
-            items = itemDAO.searchItems(searchKeyword.trim(), type, categoryId, locationId);
+            items = itemDAO.searchItems(searchKeyword.trim(), daoType, categoryId, locationId);
         } else {
-            items = itemDAO.getItemsByTypeWithFilter(type, categoryId, locationId, fromDate, toDate);
+            items = itemDAO.getItemsByTypeWithFilter(daoType, categoryId, locationId, fromDate, toDate);
         }
+
+        // Paging logic
+        int page = 1;
+        String pageParam = request.getParameter("page");
+        if (pageParam != null && !pageParam.trim().isEmpty()) {
+            try {
+                page = Integer.parseInt(pageParam.trim());
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+        int pageSize = 12; // 3 columns * 4 rows = 12
+        int totalItems = items.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (page < 1) page = 1;
+        if (totalPages > 0 && page > totalPages) page = totalPages;
+
+        int startIndex = (page - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalItems);
+        List<Items> pagedItems = new java.util.ArrayList<>();
+        if (totalItems > 0) {
+            pagedItems = items.subList(startIndex, endIndex);
+        }
+
         List<Categories> categories = itemDAO.getAllCategories();
         List<Locations> locations = itemDAO.getAllLocations();
-
-        request.setAttribute("items", items);
+ 
+        request.setAttribute("items", pagedItems);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalItemsCount", totalItems);
         request.setAttribute("type", type);
         request.setAttribute("categories", categories);
         request.setAttribute("locations", locations);
@@ -97,7 +122,7 @@ public class listPublicItemsController extends HttpServlet {
         request.setAttribute("fromDate", fromParam);
         request.setAttribute("toDate", toParam);
         request.setAttribute("searchKeyword", searchKeyword);
-
+ 
         request.getRequestDispatcher("/WEB-INF/views/items.jsp").forward(request, response);
     }
 

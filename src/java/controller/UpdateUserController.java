@@ -50,7 +50,7 @@ public class UpdateUserController extends HttpServlet {
                 new dal.MessageDAO().insertAccountNotification(id, "Account", "Tài khoản của bạn đã bị khóa bởi Admin.");
             }
             
-            response.sendRedirect("manage_users");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=users");
             
         } catch (Exception e) {
             System.out.println(e);

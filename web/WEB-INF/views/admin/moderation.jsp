@@ -1,6 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@taglib prefix="lf" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -13,22 +14,7 @@
 </head>
 <body>
 <div class="lf-wrapper">
-    <nav class="lf-navbar">
-        <div class="lf-navbar__inner">
-            <a href="${pageContext.request.contextPath}/home" class="lf-navbar__brand">
-                <div class="lf-navbar__logo">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:white; display:block;">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </div>
-                <span class="lf-navbar__title">Lost &amp; Found (Admin)</span>
-            </a>
-            <div class="lf-navbar__user">
-                <lf:userMenu fullName="${sessionScope.currentUser.fullName}" role="${sessionScope.userRole}" contextPath="${pageContext.request.contextPath}"/>
-            </div>
-        </div>
-    </nav>
+    <lf:navbar activeMenu="moderation" />
 
     <main class="lf-main">
         <div class="lf-breadcrumb">
@@ -37,8 +23,9 @@
             <span class="current">Kiểm duyệt vi phạm</span>
         </div>
 
-        <h1 class="lf-page-header__title mb-lg">Hàng Đợi Kiểm Duyệt</h1>
+        <h1 class="lf-page-header__title mb-lg">Bài viết cần kiểm tra</h1>
 
+        <c:catch var="ex">
         <!-- FLASH MESSAGES -->
         <c:if test="${not empty sessionScope.message}">
             <div class="lf-alert lf-alert-success mb-md">
@@ -49,7 +36,7 @@
 
         <div class="lf-grid-2">
             <div>
-                <h2 class="lf-section-title"><span class="dot"></span> Bị ẩn bởi hệ thống (Chờ xử lý)</h2>
+                <h2 class="lf-section-title"><span class="dot"></span> Bị ẩn bởi hệ thống (Đã tạm ẩn)</h2>
                 <c:choose>
                     <c:when test="${not empty processingItems}">
                         <c:forEach var="item" items="${processingItems}">
@@ -57,13 +44,23 @@
                                 <div class="lf-mod-card__info">
                                     <div class="lf-mod-card__title">${item.title}</div>
                                     <div class="lf-mod-card__meta">
-                                        Đăng bởi: ${item.ownerFullName} | Lĩnh vực: ${item.type}
+                                        Đăng bởi: <a href="javascript:void(0)" onclick="showUserDetail('${fn:escapeXml(item.ownerFullName)}', '${item.ownerPhone}', true)" style="text-decoration:underline; font-weight:600; color:var(--txt-main);">${item.ownerFullName}</a> | Lĩnh vực: ${item.type} | Ngày đăng: <fmt:formatDate value="${item.createdAt}" pattern="dd/MM/yyyy HH:mm:ss"/>
                                     </div>
-                                    <div class="lf-mod-card__reason">
-                                        Hệ thống phát hiện từ cấm hoặc số điện thoại blacklist
+                                    <div class="lf-mod-card__reason" style="background:#f1f5f9; color:#475569; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 0.88rem; font-weight: 500;">
+                                        Lý do ẩn: ${item.reason}
+                                        <c:if test="${not empty item.reportersList}">
+                                            <div style="color:var(--clr-danger); margin-top: 4px; font-size: 0.82rem;">
+                                                Người báo cáo: 
+                                                <c:forEach var="repUser" items="${item.reportersList}" varStatus="status">
+                                                    <a href="javascript:void(0)" onclick="showUserDetail('${fn:escapeXml(repUser.fullName)}', '${repUser.phoneNumber}', false)" class="text-danger" style="text-decoration: underline; font-weight: 600;">
+                                                        ${repUser.fullName}
+                                                    </a><c:if test="${!status.last}">, </c:if>
+                                                </c:forEach>
+                                            </div>
+                                        </c:if>
                                     </div>
-                                    <div class="lf-mod-card__actions">
-                                        <a href="${pageContext.request.contextPath}/item_detail?id=${item.itemId}" class="btn btn-sm btn-ghost" target="_blank">Xem bài đăng</a>
+                                    <div class="lf-mod-card__actions" style="margin-top: 12px;">
+                                        <a href="${pageContext.request.contextPath}/item_detail?id=${item.itemId}" class="btn btn-sm btn-ghost">Xem bài đăng</a>
                                         <form method="POST" action="moderation" style="display:inline;">
                                             <input type="hidden" name="itemId" value="${item.itemId}">
                                             <input type="hidden" name="action" value="approve">
@@ -86,7 +83,7 @@
             </div>
 
             <div>
-                <h2 class="lf-section-title"><span class="dot" style="background:var(--clr-warning)"></span> Bị báo cáo bởi cộng đồng</h2>
+                <h2 class="lf-section-title"><span class="dot" style="background:var(--clr-warning)"></span> Bị báo cáo bởi cộng đồng (Vẫn hiển thị)</h2>
                 <c:choose>
                     <c:when test="${not empty reportedItems}">
                         <c:forEach var="rep" items="${reportedItems}">
@@ -94,13 +91,33 @@
                                 <div class="lf-mod-card__info">
                                     <div class="lf-mod-card__title">${rep.title}</div>
                                     <div class="lf-mod-card__meta">
-                                        Người đăng: ${rep.ownerName} | Bị báo cáo: <strong>${rep.reportCount}</strong> lần
+                                        Người đăng: <strong><a href="javascript:void(0)" onclick="showUserDetail('${fn:escapeXml(rep.ownerName)}', '${rep.ownerPhone}', true)" style="text-decoration:underline; color:var(--txt-main);">${rep.ownerName}</a></strong>
+                                        <c:if test="${not empty rep.reportersList}">
+                                            | Người báo cáo: 
+                                            <c:forEach var="repUser" items="${rep.reportersList}" varStatus="status">
+                                                <a href="javascript:void(0)" onclick="showUserDetail('${fn:escapeXml(repUser.fullName)}', '${repUser.phoneNumber}', false)" class="text-danger" style="text-decoration: underline; font-weight: 600;">
+                                                    ${repUser.fullName}
+                                                </a><c:if test="${!status.last}">, </c:if>
+                                            </c:forEach>
+                                        </c:if>
                                     </div>
-                                    <div class="lf-mod-card__reason" style="background:var(--clr-warning-l); color:#b45309;">
-                                        Lý do báo cáo: ${rep.latestReason}
+                                    <div class="lf-mod-card__meta" style="margin-top: 4px; font-size: 0.82rem; color: var(--txt-muted);">
+                                        Báo cáo gần nhất: <strong style="color:var(--txt-main);"><fmt:formatDate value="${rep.latestReportTime}" pattern="dd/MM/yyyy HH:mm:ss"/></strong> | Bị báo cáo: <strong style="color:var(--clr-danger);">${rep.reportCount}</strong> lần
                                     </div>
-                                    <div class="lf-mod-card__actions">
-                                        <a href="${pageContext.request.contextPath}/item_detail?id=${rep.itemId}" class="btn btn-sm btn-ghost" target="_blank">Xem bài đăng</a>
+                                    <div class="lf-mod-card__reason text-expandable-card" onclick="viewTextDetail(this, 'Lý do báo cáo')" style="background:var(--clr-warning-l); color:#b45309; cursor:pointer; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 0.88rem;">
+                                        Lý do báo cáo gần nhất: 
+                                        <c:choose>
+                                            <c:when test="${fn:length(rep.latestReason) > 40}">
+                                                ${fn:substring(rep.latestReason, 0, 40)}... <span style="font-weight:700; text-decoration:underline;">[Xem]</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                ${rep.latestReason}
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                    <div class="d-none full-text-content">${rep.latestReason}</div>
+                                    <div class="lf-mod-card__actions" style="margin-top: 12px;">
+                                        <a href="${pageContext.request.contextPath}/item_detail?id=${rep.itemId}" class="btn btn-sm btn-ghost">Xem bài đăng</a>
                                         <form method="POST" action="moderation" style="display:inline;">
                                             <input type="hidden" name="itemId" value="${rep.itemId}">
                                             <input type="hidden" name="action" value="approve">
@@ -122,6 +139,23 @@
                 </c:choose>
             </div>
         </div>
+        </c:catch>
+        <c:if test="${not empty ex}">
+            <div class="alert alert-danger" style="margin: 20px; padding: 20px; border-radius: 8px; background: #fff1f2; border: 1px solid #f43f5e; color: #9f1239;">
+                <h4 style="margin-top:0;">🔴 Đã xảy ra lỗi hiển thị ở trang Kiểm Duyệt:</h4>
+                <p><strong>Lỗi:</strong> ${ex}</p>
+                <p><strong>Chi tiết:</strong> ${ex.message}</p>
+                <pre style="background: #ffe4e6; color: #9f1239; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 15px; font-family: monospace; font-size: 0.85rem;"><%
+                    Throwable t = (Throwable) pageContext.getAttribute("ex");
+                    if (t != null) {
+                        java.io.StringWriter sw = new java.io.StringWriter();
+                        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+                        t.printStackTrace(pw);
+                        out.print(sw.toString());
+                    }
+                %></pre>
+            </div>
+        </c:if>
     </main>
 </div>
 
@@ -134,6 +168,47 @@
         <div class="flex gap-sm mt-sm">
             <button type="button" class="btn btn-secondary flex-1" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;" onclick="closeConfirmModal()">Hủy</button>
             <button type="button" class="btn btn-primary flex-1" id="confirmBtn" style="background:#fd7e14; border-color:#fd7e14; color:white;">Đồng ý</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal hiển thị nội dung to -->
+<div class="lf-modal-overlay" id="detailModal">
+    <div class="lf-modal" style="max-width: 550px;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="lf-modal__title" id="detailModalTitle" style="margin: 0;">Nội dung chi tiết</h3>
+            <button type="button" onclick="closeDetailModal()" style="border:none; background:none; font-size:1.6rem; line-height:1; cursor:pointer; color:var(--txt-muted);">&times;</button>
+        </div>
+        
+        <div class="mb-4" id="detailModalBody" style="max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; color: #1f2937; font-size: 0.95rem; line-height: 1.5; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--clr-border);">
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary" style="font-size:0.85rem; font-weight:600; padding: 6px 16px; background:#e2e8f0; color:#334155; border:none;" onclick="closeDetailModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<!-- User Detail Modal -->
+<div class="lf-modal-overlay" id="userDetailModal">
+    <div class="lf-modal" style="max-width: 420px; border-radius: 12px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="lf-modal__title" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--txt-main);">👤 Thông tin tài khoản</h3>
+            <button type="button" onclick="closeUserDetailModal()" style="border:none; background:none; font-size:1.6rem; line-height:1; cursor:pointer; color:var(--txt-muted);">&times;</button>
+        </div>
+        
+        <div class="mb-4" style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--clr-border);">
+            <div class="mb-2" style="font-size: 0.95rem;">
+                <strong style="color: var(--txt-muted);">Họ và tên:</strong> 
+                <span id="udFullName" style="font-weight: 600; color: var(--txt-main); margin-left: 6px;"></span>
+            </div>
+            <div style="font-size: 0.95rem;">
+                <strong style="color: var(--txt-muted);">Số điện thoại:</strong> 
+                <span id="udPhone" style="font-weight: 600; color: var(--clr-primary); margin-left: 6px;"></span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end" id="userDetailActions">
         </div>
     </div>
 </div>
@@ -161,6 +236,48 @@
         }
         closeConfirmModal();
     });
+
+    function viewTextDetail(element, title) {
+        const parent = element.parentElement;
+        const fullText = parent.querySelector('.full-text-content').innerText;
+        
+        document.getElementById('detailModalTitle').innerText = title;
+        document.getElementById('detailModalBody').innerText = fullText;
+        document.getElementById('detailModal').classList.add('open');
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('open');
+    }
+
+    function showUserDetail(fullName, phoneNumber, isOwner) {
+        document.getElementById('udFullName').innerText = fullName;
+        document.getElementById('udPhone').innerText = (phoneNumber && phoneNumber.trim() !== '') ? phoneNumber : 'Không có SĐT';
+        
+        const actionsContainer = document.getElementById('userDetailActions');
+        actionsContainer.innerHTML = '';
+        
+        if (isOwner && phoneNumber && phoneNumber.trim() !== '') {
+            actionsContainer.innerHTML = `
+                <form method="POST" action="moderation" style="margin:0;" onsubmit="return confirm('Bạn chắc chắn muốn BAN người dùng này, thêm SĐT ${phoneNumber} vào Blacklist và tạm ẩn toàn bộ tin đăng của họ?');">
+                    <input type="hidden" name="action" value="blacklist">
+                    <input type="hidden" name="phone" value="${phoneNumber}">
+                    <button type="submit" class="btn btn-danger" style="font-size: 0.85rem; font-weight: 600; padding: 8px 16px;">🚫 Đưa vào Blacklist (Ban)</button>
+                </form>
+                <button type="button" class="btn btn-secondary" style="font-size: 0.85rem; font-weight: 600; padding: 8px 16px; background:#e2e8f0; color:#334155; border:none;" onclick="closeUserDetailModal()">Đóng</button>
+            `;
+        } else {
+            actionsContainer.innerHTML = `
+                <button type="button" class="btn btn-secondary" style="font-size: 0.85rem; font-weight: 600; padding: 8px 16px; background:#e2e8f0; color:#334155; border:none;" onclick="closeUserDetailModal()">Đóng</button>
+            `;
+        }
+        
+        document.getElementById('userDetailModal').classList.add('open');
+    }
+
+    function closeUserDetailModal() {
+        document.getElementById('userDetailModal').classList.remove('open');
+    }
 </script>
 </body>
 </html>

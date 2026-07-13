@@ -28,7 +28,7 @@
     </nav>
     <main class="lf-main">
         <div class="lf-breadcrumb">
-            <a href="${pageContext.request.contextPath}/manage_users">👥 Người dùng</a>
+            <a href="${pageContext.request.contextPath}/admin/data_management?tab=users">👥 Người dùng</a>
             <span class="sep">›</span><span class="current">Cập nhật</span>
         </div>
         <div class="lf-page-header">
@@ -37,7 +37,7 @@
         <c:set var="u" value="${requestScope.user}"/>
         <div class="lf-card" style="max-width:500px;">
             <div class="mb-md" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(91,141,238,.06);border-radius:var(--r-md);border:1px solid var(--clr-border);">
-                <lf:avatar fullName="${u.fullName}" className="lf-navbar__avatar" />
+                <lf:avatar fullName="${u.fullName}" avatarUrl="${u.avatarUrl}" className="lf-navbar__avatar" />
                 <div>
                     <div class="fw-bold">${u.username}</div>
                     <div class="text-sm text-muted">${u.email}</div>
@@ -61,14 +61,15 @@
                 </div>
                 <div class="flex gap-md">
                     <button type="submit" class="btn btn-primary">💾 Cập nhật</button>
-                    <a href="${pageContext.request.contextPath}/manage_users" class="btn btn-ghost">← Quay lại</a>
+                    <a href="${pageContext.request.contextPath}/admin/data_management?tab=users" class="btn btn-ghost">← Quay lại</a>
                 </div>
             </form>
         </div>
     </main>
-    <footer class="lf-footer">© 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.</footer>
+    <lf:footer />
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
 </body>
 </html>
+

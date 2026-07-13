@@ -41,64 +41,78 @@
 
             <!-- Stats -->
             <div class="lf-stats mb-lg">
-                <div class="lf-stat">
-                    <div class="lf-stat__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <a href="${pageContext.request.contextPath}/admin/data_management?tab=users" style="text-decoration: none; color: inherit; display: block;">
+                    <div class="lf-stat">
+                        <div class="lf-stat__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div>
+                            <div class="lf-stat__val">${totalUsers}</div>
+                            <div class="lf-stat__label">Người dùng</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="lf-stat__val">${totalUsers}</div>
-                        <div class="lf-stat__label">Người dùng</div>
+                </a>
+                
+                <a href="${pageContext.request.contextPath}/admin/data_management?tab=items" style="text-decoration: none; color: inherit; display: block;">
+                    <div class="lf-stat">
+                        <div class="lf-stat__icon danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                        </div>
+                        <div>
+                            <div class="lf-stat__val">${totalLostItems}</div>
+                            <div class="lf-stat__label">Đồ báo mất</div>
+                        </div>
                     </div>
-                </div>
-                <div class="lf-stat">
-                    <div class="lf-stat__icon danger">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                </a>
+                
+                <a href="${pageContext.request.contextPath}/admin/data_management?tab=items" style="text-decoration: none; color: inherit; display: block;">
+                    <div class="lf-stat">
+                        <div class="lf-stat__icon success">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div>
+                            <div class="lf-stat__val">${totalFoundItems}</div>
+                            <div class="lf-stat__label">Đồ nhặt được</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="lf-stat__val">${totalLostItems}</div>
-                        <div class="lf-stat__label">Đồ báo mất</div>
+                </a>
+                
+                <a href="${pageContext.request.contextPath}/admin/moderation" style="text-decoration: none; color: inherit; display: block;">
+                    <div class="lf-stat">
+                        <div class="lf-stat__icon success">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <div>
+                            <div class="lf-stat__val">${pendingModerationsCount}</div>
+                            <div class="lf-stat__label">Bài viết cần kiểm tra</div>
+                        </div>
                     </div>
-                </div>
-                <div class="lf-stat">
-                    <div class="lf-stat__icon success">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </a>
+                
+                <a href="${pageContext.request.contextPath}/admin/support" style="text-decoration: none; color: inherit; display: block;">
+                    <div class="lf-stat">
+                        <c:if test="${not empty pendingSupportsCount and pendingSupportsCount > 0}">
+                            <span class="lf-stat__badge">+${pendingSupportsCount}</span>
+                        </c:if>
+                        <div class="lf-stat__icon warn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div>
+                            <div class="lf-stat__val">${pendingSupportsCount}</div>
+                            <div class="lf-stat__label">Yêu cầu hỗ trợ</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="lf-stat__val">${totalFoundItems}</div>
-                        <div class="lf-stat__label">Đồ nhặt được</div>
-                    </div>
-                </div>
-                <div class="lf-stat">
-                    <div class="lf-stat__icon success">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <div>
-                        <div class="lf-stat__val">${totalCompletedItems}</div>
-                        <div class="lf-stat__label">Đã hoàn thành</div>
-                    </div>
-                </div>
-                <div class="lf-stat">
-                    <div class="lf-stat__icon warn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <div>
-                        <div class="lf-stat__val">${totalProcessingItems}</div>
-                        <div class="lf-stat__label">Đang xử lý</div>
-                    </div>
-                </div>
+                </a>
             </div>
 
             <!-- Quick access -->
             <div class="lf-card">
                 <div class="lf-card__title">Quản lý nhanh</div>
                 <div class="flex flex-wrap gap-md">
-                    <a href="${pageContext.request.contextPath}/manage_users"      class="btn btn-secondary">Tài khoản</a>
-                    <a href="${pageContext.request.contextPath}/manage_categories" class="btn btn-secondary">Danh mục</a>
-                    <a href="${pageContext.request.contextPath}/manage_locations"  class="btn btn-secondary">Vị trí</a>
-                    <a href="${pageContext.request.contextPath}/manage_items"      class="btn btn-secondary">Vật phẩm</a>
-                    <a href="${pageContext.request.contextPath}/manage_claims"     class="btn btn-secondary">Yêu cầu</a>
-                    <a href="${pageContext.request.contextPath}/admin/moderation"  class="btn btn-warning" style="color:#000;">Kiểm duyệt</a>
-                    <a href="${pageContext.request.contextPath}/admin/blacklist"   class="btn btn-danger">Blacklist</a>
+                    <a href="${pageContext.request.contextPath}/admin/data_management" class="btn btn-secondary">📁 Quản lý dữ liệu</a>
+                    <a href="${pageContext.request.contextPath}/admin/moderation"  class="btn btn-warning" style="color:#000;">🛡️ Kiểm duyệt</a>
+                    <a href="${pageContext.request.contextPath}/admin/blacklist"   class="btn btn-danger">🚫 Blacklist</a>
+                    <a href="${pageContext.request.contextPath}/admin/support"     class="btn btn-info" style="color:white;">💬 Hỗ trợ</a>
                 </div>
             </div>
         </c:when>
@@ -106,9 +120,9 @@
         <c:otherwise>
             <div class="lf-grid-2">
                 <!-- SIDEBAR BÊN TRÁI -->
-                <aside class="lf-sidebar" style="background:#f9fafb; border-right:1px solid #e5e7eb; padding:0; flex:0 0 260px; min-height:80vh;">
-                    <div style="padding:20px 16px; border-bottom:1px solid #e5e7eb; color:#4b5563; font-weight:500;">
-                        0711.vn - Không lo thất lạc, tìm là thấy
+                <aside class="lf-sidebar" style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 8px; flex:0 0 260px; min-height:fit-content; height:fit-content; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <div style="padding:12px 16px 20px; border-bottom:1px solid #e5e7eb; color:var(--clr-primary); font-weight:700; font-size:1.05rem; text-align:center;">
+                        Lost&Found — Tìm là thấy
                     </div>
                     <ul class="lf-menu" style="list-style:none; padding:12px 0; margin:0;">
                         <li style="padding:4px 16px;">
@@ -180,13 +194,16 @@
                             <h1 class="lf-page-header__title" style="font-size:1.1rem; margin-bottom:0;">Bảng tin trường học</h1>
                             <span class="text-muted text-sm">Tìm kiếm đồ thất lạc nhanh chóng</span>
                         </div>
-                        <div>
-                            <select onchange="if(this.value) { window.location.href='${pageContext.request.contextPath}/items?type=lost&locationId=' + this.value; }" class="lf-select" style="min-width:180px; padding:6px 12px; font-size:0.85rem;">
-                                <option value="">Toàn quốc / Khu vực</option>
+                        <div class="lf-filter-select-container">
+                            <select onchange="if(this.value) { window.location.href='${pageContext.request.contextPath}/items?type=lost&locationId=' + this.value; }" class="lf-filter-select">
+                                <option value="">Khu vực</option>
                                 <c:forEach var="loc" items="${locations}">
                                     <option value="${loc.locationId}">${loc.name}</option>
                                 </c:forEach>
                             </select>
+                            <div class="lf-filter-select-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </div>
                         </div>
                     </div>
 
@@ -204,7 +221,7 @@
                         <c:when test="${not empty latestLostItems}">
                             <div class="lf-items-grid mb-lg">
                                 <c:forEach var="it" items="${latestLostItems}">
-                                    <div class="lf-item-card">
+                                    <div class="lf-item-card border-lost">
                                         <!-- Thumbnail Image -->
                                         <c:set var="firstImg" value="${it.imagesJSON}"/>
                                         <c:if test="${not empty firstImg}">
@@ -230,7 +247,7 @@
                                             </div>
                                         </div>
                                         <div class="lf-item-card__footer" style="padding:0 12px 12px;">
-                                            <span class="lf-item-card__time">Mới đăng</span>
+                                            <span class="lf-item-card__time">${it.friendlyTime}</span>
                                             <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" class="btn btn-primary btn-sm" style="background:var(--clr-primary); border:none; padding:4px 10px;">
                                                 Chi tiết
                                             </a>
@@ -258,7 +275,7 @@
                         <c:when test="${not empty latestFoundItems}">
                             <div class="lf-items-grid">
                                 <c:forEach var="it" items="${latestFoundItems}">
-                                    <div class="lf-item-card">
+                                    <div class="lf-item-card border-found">
                                         <!-- Thumbnail Image -->
                                         <c:set var="firstImg" value="${it.imagesJSON}"/>
                                         <c:if test="${not empty firstImg}">
@@ -283,7 +300,7 @@
                                             </div>
                                         </div>
                                         <div class="lf-item-card__footer" style="padding:0 12px 12px;">
-                                            <span class="lf-item-card__time">Mới đăng</span>
+                                            <span class="lf-item-card__time">${it.friendlyTime}</span>
                                             <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" class="btn btn-primary btn-sm" style="background:var(--clr-primary); border:none; padding:4px 10px;">
                                                 Chi tiết
                                             </a>
@@ -302,17 +319,7 @@
     </c:choose>
     </main>
 
-    <footer class="lf-footer" style="padding: 24px 0; background: white; border-top: 1px solid var(--clr-border); text-align: center; margin-top: 40px;">
-        <div class="footer-links" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; font-weight: 500;">
-            <a href="${pageContext.request.contextPath}/support" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Hỗ trợ</a>
-            <a href="#" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Mẹo tìm kiếm</a>
-            <a href="#" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Chính sách bảo mật</a>
-            <a href="#" style="color: var(--txt-muted); text-decoration: none; font-size: 0.9rem;" onmouseover="this.style.color='var(--clr-primary)'" onmouseout="this.style.color='var(--txt-muted)'">Điều khoản sử dụng</a>
-        </div>
-        <div style="font-size: 0.85rem; color: var(--txt-muted);">
-            © 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.
-        </div>
-    </footer>
+    <lf:footer />
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

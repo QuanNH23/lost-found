@@ -141,7 +141,7 @@
             </table>
         </div>
     </main>
-    <footer class="lf-footer">© 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.</footer>
+    <lf:footer />
 </div>
 
 <!-- Custom Confirm Modal -->
@@ -199,3 +199,4 @@
 </style>
 </body>
 </html>
+

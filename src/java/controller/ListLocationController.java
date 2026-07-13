@@ -51,8 +51,6 @@ public class ListLocationController extends HttpServlet {
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
@@ -60,20 +58,9 @@ public class ListLocationController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        LocationDAO l = new LocationDAO();
-        List<Locations> list = l.getAllLocations();
-        request.setAttribute("data", list);
-        request.getRequestDispatcher("/WEB-INF/views/listLocation.jsp").forward(request, response);
+        response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=locations");
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

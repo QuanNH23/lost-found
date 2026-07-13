@@ -68,7 +68,7 @@ public class DeleteItemController extends HttpServlet {
 
             dao.deleteItem(id);
 
-            response.sendRedirect("manage_items");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=items");
 
         } catch (NumberFormatException e) {
             System.out.println(e);

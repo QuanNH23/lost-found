@@ -158,6 +158,38 @@ public class Items {
         this.updatedAt = updatedAt;
     }
 
+    public String getFriendlyTime() {
+        if (createdAt == null) return "Mới đăng";
+        
+        java.util.Calendar calNow = java.util.Calendar.getInstance();
+        java.util.Calendar calCreate = java.util.Calendar.getInstance();
+        calCreate.setTime(createdAt);
+        
+        long diff = calNow.getTimeInMillis() - calCreate.getTimeInMillis();
+        long diffMinutes = diff / (60 * 1000);
+        long diffHours = diff / (60 * 60 * 1000);
+        long diffDays = diff / (24 * 60 * 60 * 1000);
+
+        if (diffMinutes < 1) {
+            return "Vừa xong";
+        } else if (diffMinutes < 60) {
+            return diffMinutes + "'";
+        } else if (diffHours < 24) {
+            return diffHours + " giờ";
+        } else if (diffDays <= 7) {
+            return diffDays + " ngày";
+        } else {
+            int nowYear = calNow.get(java.util.Calendar.YEAR);
+            int createYear = calCreate.get(java.util.Calendar.YEAR);
+            
+            if (nowYear == createYear) {
+                return new java.text.SimpleDateFormat("d 'thg' M").format(createdAt);
+            } else {
+                return new java.text.SimpleDateFormat("d 'thg' M, yyyy").format(createdAt);
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return "Items{" + "itemId=" + itemId + ", userId=" + userId + ", categoryId=" + categoryId + ", locationId=" + locationId + ", title=" + title + ", description=" + description + ", type=" + type + ", status=" + status + ", imagesJSON=" + imagesJSON + ", dateIncident=" + dateIncident + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';

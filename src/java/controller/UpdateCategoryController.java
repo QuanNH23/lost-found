@@ -101,7 +101,7 @@ public class UpdateCategoryController extends HttpServlet {
             cdb.updateCategory(cNew);
 
             // 5. Chuyển hướng về trang danh sách (đảm bảo urlPatterns "manage_categories" là đúng)
-            response.sendRedirect("manage_categories");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=categories");
         } catch (Exception e) {
             System.out.println("Update Error: " + e);
         }

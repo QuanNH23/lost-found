@@ -60,20 +60,36 @@ public class CategoryDAO extends DBContext {
         }
     }
 
-    public void deleteCategory(int id) {
-
-        String sql = "DELETE FROM Categories WHERE category_id=?";
-
+    public boolean deleteCategory(int id) {
         try {
+            // Xóa claims liên quan tới items thuộc danh mục này trước
+            String sqlClaims = "DELETE FROM Claims WHERE item_id IN (SELECT item_id FROM Items WHERE category_id=?)";
+            PreparedStatement psClaims = connection.prepareStatement(sqlClaims);
+            psClaims.setInt(1, id);
+            psClaims.executeUpdate();
 
+            // Xóa messages (bao gồm cả reports) liên quan tới items thuộc danh mục này
+            String sqlReports = "DELETE FROM Message WHERE related_item_id IN (SELECT item_id FROM Items WHERE category_id=?)";
+            PreparedStatement psReports = connection.prepareStatement(sqlReports);
+            psReports.setInt(1, id);
+            psReports.executeUpdate();
+
+            // Xóa items thuộc danh mục này
+            String sqlItems = "DELETE FROM Items WHERE category_id=?";
+            PreparedStatement psItems = connection.prepareStatement(sqlItems);
+            psItems.setInt(1, id);
+            psItems.executeUpdate();
+
+            // Cuối cùng xóa danh mục
+            String sql = "DELETE FROM Categories WHERE category_id=?";
             PreparedStatement ps = connection.prepareStatement(sql);
-
             ps.setInt(1, id);
-
             ps.executeUpdate();
 
+            return true;
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println("Delete Category Error: " + e);
+            return false;
         }
     }
 

@@ -31,8 +31,8 @@ public class AuthorizationFilter implements Filter {
         
         String path = req.getServletPath();
         
-        // 1. Let assets pass unconditionally
-        if (path.startsWith("/assets/")) {
+        // 1. Let assets and uploads pass unconditionally
+        if (path.startsWith("/assets/") || path.startsWith("/uploads/")) {
             chain.doFilter(request, response);
             return;
         }
@@ -41,9 +41,48 @@ public class AuthorizationFilter implements Filter {
         if (session != null && session.getAttribute("currentUser") != null) {
             Users currUser = (Users) session.getAttribute("currentUser");
             MessageDAO msgDao = new MessageDAO();
-            int unreadCount = msgDao.countUnreadInbox(currUser.getUserId());
-            req.setAttribute("unreadInboxCount", unreadCount);
-            req.setAttribute("inboxNotificationsList", msgDao.getInbox(currUser.getUserId()));
+            
+            String role = (String) session.getAttribute("userRole");
+            if ("admin".equalsIgnoreCase(role)) {
+                if (path.equals("/admin/support")) {
+                    session.setAttribute("adminRead_support", true);
+                } else if (path.equals("/admin/moderation")) {
+                    session.setAttribute("adminRead_hidden", true);
+                    session.setAttribute("adminRead_reported", true);
+                }
+
+                java.util.List<java.util.Map<String, String>> dbNotifs = msgDao.getAdminNotifications();
+                java.util.List<java.util.Map<String, String>> finalNotifs = new java.util.ArrayList<>();
+                int unreadCount = 0;
+
+                for (java.util.Map<String, String> notif : dbNotifs) {
+                    String type = notif.get("type");
+                    int currentCount = Integer.parseInt(notif.get("count"));
+                    
+                    Integer lastCount = (Integer) session.getAttribute("adminLastCount_" + type);
+                    if (lastCount == null || lastCount != currentCount) {
+                        session.setAttribute("adminLastCount_" + type, currentCount);
+                        session.setAttribute("adminRead_" + type, false);
+                    }
+
+                    Boolean isRead = (Boolean) session.getAttribute("adminRead_" + type);
+                    if (isRead == null) isRead = false;
+
+                    if (!isRead) {
+                        unreadCount++;
+                    }
+                    
+                    notif.put("isRead", String.valueOf(isRead));
+                    finalNotifs.add(notif);
+                }
+                
+                req.setAttribute("adminNotifications", finalNotifs);
+                req.setAttribute("adminUnreadCount", unreadCount);
+            } else {
+                int unreadCount = msgDao.countUnreadInbox(currUser.getUserId());
+                req.setAttribute("unreadInboxCount", unreadCount);
+                req.setAttribute("inboxNotificationsList", msgDao.getInbox(currUser.getUserId()));
+            }
         }
 
         // 3. Public paths - skip auth checks

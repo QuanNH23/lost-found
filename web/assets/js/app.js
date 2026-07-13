@@ -193,5 +193,15 @@
     });
   }
 
+  // ── Force reload on back/forward history navigation ──────────
+  window.addEventListener('pageshow', function (event) {
+    const historyTraversal = event.persisted || 
+                             (typeof window.performance !== 'undefined' && 
+                              window.performance.navigation.type === 2);
+    if (historyTraversal) {
+      window.location.reload();
+    }
+  });
+
   console.log('%c🔍 Lost & Found System — UI loaded', 'color:#5b8dee;font-weight:700;font-size:14px;');
 })();

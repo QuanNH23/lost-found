@@ -246,7 +246,7 @@ public class MessageDAO extends DBContext {
     public int countReportsByItemId(int itemId) {
         if (connection == null) return 0;
         
-        String sql = "SELECT COUNT(*) FROM Message WHERE related_item_id = ? AND title LIKE '[REPORT]%'";
+        String sql = "SELECT COUNT(DISTINCT user_id) FROM Message WHERE related_item_id = ? AND title LIKE '[REPORT]%'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, itemId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -280,32 +280,160 @@ public class MessageDAO extends DBContext {
         List<Map<String, Object>> list = new ArrayList<>();
         if (connection == null) return list;
         
-        String sql = "SELECT i.item_id, i.title, i.user_id as owner_id, u.full_name as owner_name, "
-                   + "COUNT(m.message_id) as report_count, MAX(m.created_at) as latest_report_time, "
+        String sql = "SELECT i.item_id, i.title, i.user_id as owner_id, u.full_name as owner_name, u.phone_number as owner_phone, "
+                   + "COUNT(DISTINCT m.user_id) as report_count, MAX(m.created_at) as latest_report_time, "
                    + "(SELECT TOP 1 message FROM Message sub_m WHERE sub_m.related_item_id = i.item_id AND sub_m.title LIKE '[REPORT]%' ORDER BY sub_m.created_at DESC) as latest_reason "
                    + "FROM Items i "
                    + "INNER JOIN Message m ON i.item_id = m.related_item_id "
                    + "INNER JOIN Users u ON i.user_id = u.user_id "
                    + "WHERE m.title LIKE '[REPORT]%' AND i.status = 'active' "
-                   + "GROUP BY i.item_id, i.title, i.user_id, u.full_name "
-                   + "ORDER BY report_count DESC, latest_report_time DESC";
+                   + "GROUP BY i.item_id, i.title, i.user_id, u.full_name, u.phone_number "
+                   + "ORDER BY latest_report_time DESC";
                    
         try (PreparedStatement ps = connection.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
-                map.put("itemId", rs.getInt("item_id"));
+                int itemId = rs.getInt("item_id");
+                map.put("itemId", itemId);
                 map.put("title", rs.getString("title"));
                 map.put("ownerId", rs.getInt("owner_id"));
                 map.put("ownerName", rs.getString("owner_name"));
+                map.put("ownerPhone", rs.getString("owner_phone"));
                 map.put("reportCount", rs.getInt("report_count"));
                 map.put("latestReportTime", rs.getTimestamp("latest_report_time"));
                 map.put("latestReason", rs.getString("latest_reason"));
+                
+                // Fetch reporter details
+                map.put("reportersList", getReportersDetails(itemId));
+                
                 list.add(map);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public List<Map<String, String>> getReportersDetails(int itemId) {
+        List<Map<String, String>> list = new ArrayList<>();
+        if (connection == null) return list;
+        String sql = "SELECT DISTINCT u.full_name, u.phone_number FROM Message m "
+                   + "INNER JOIN Users u ON m.user_id = u.user_id "
+                   + "WHERE m.related_item_id = ? AND m.title LIKE '[REPORT]%'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("fullName", rs.getString("full_name"));
+                    map.put("phoneNumber", rs.getString("phone_number"));
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public String getReportersForItem(int itemId) {
+        if (connection == null) return "";
+        List<String> reporters = new ArrayList<>();
+        String sql = "SELECT DISTINCT u.full_name FROM Message m "
+                   + "INNER JOIN Users u ON m.user_id = u.user_id "
+                   + "WHERE m.related_item_id = ? AND m.title LIKE '[REPORT]%'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    reporters.add(rs.getString("full_name"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return String.join(", ", reporters);
+    }
+
+    public int countTotalReportsByUserId(int userId) {
+        if (connection == null) return 0;
+        String sql = "SELECT COUNT(m.message_id) "
+                   + "FROM Message m "
+                   + "INNER JOIN Items i ON m.related_item_id = i.item_id "
+                   + "WHERE i.user_id = ? AND m.title LIKE '[REPORT]%'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public boolean deleteReportsByItemId(int itemId) {
+        if (connection == null) return false;
+        String sql = "DELETE FROM Message WHERE related_item_id = ? AND title LIKE '[REPORT]%'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public java.util.List<java.util.Map<String, String>> getAdminNotifications() {
+        java.util.List<java.util.Map<String, String>> notifs = new java.util.ArrayList<>();
+        if (connection == null) return notifs;
+        
+        // 1. Count pending support requests
+        String sqlSupport = "SELECT COUNT(*) FROM SupportRequests WHERE status = 'processing'";
+        try (PreparedStatement ps = connection.prepareStatement(sqlSupport);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next() && rs.getInt(1) > 0) {
+                java.util.Map<String, String> n = new java.util.HashMap<>();
+                n.put("type", "support");
+                n.put("title", "Hỗ trợ");
+                n.put("message", "Có yêu cầu hỗ trợ mới cần xử lý.");
+                n.put("link", "/admin/support");
+                n.put("count", String.valueOf(rs.getInt(1)));
+                notifs.add(n);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+
+        // 2. Count posts hidden by system (status = 'processing')
+        String sqlItems = "SELECT COUNT(*) FROM Items WHERE status = 'processing'";
+        try (PreparedStatement ps = connection.prepareStatement(sqlItems);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next() && rs.getInt(1) > 0) {
+                java.util.Map<String, String> n = new java.util.HashMap<>();
+                n.put("type", "hidden");
+                n.put("title", "Bài viết bị ẩn");
+                n.put("message", "Có bài đăng bị hệ thống tạm ẩn cần kiểm tra.");
+                n.put("link", "/admin/moderation");
+                n.put("count", String.valueOf(rs.getInt(1)));
+                notifs.add(n);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+
+        // 3. Count reported items (active posts with at least 1 report)
+        String sqlReports = "SELECT COUNT(DISTINCT i.item_id) FROM Items i INNER JOIN Message m ON i.item_id = m.related_item_id WHERE m.title LIKE '[REPORT]%' AND i.status = 'active'";
+        try (PreparedStatement ps = connection.prepareStatement(sqlReports);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next() && rs.getInt(1) > 0) {
+                java.util.Map<String, String> n = new java.util.HashMap<>();
+                n.put("type", "reported");
+                n.put("title", "Bài viết bị báo cáo");
+                n.put("message", "Có bài viết bị báo cáo vi phạm cần kiểm tra.");
+                n.put("link", "/admin/moderation");
+                n.put("count", String.valueOf(rs.getInt(1)));
+                notifs.add(n);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        
+        return notifs;
     }
 }

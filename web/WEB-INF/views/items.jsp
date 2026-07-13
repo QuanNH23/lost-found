@@ -1,6 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@taglib prefix="lf" tagdir="/WEB-INF/tags" %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -9,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         <c:choose>
+            <c:when test="${type == 'all'}">Kết quả tìm kiếm</c:when>
             <c:when test="${type == 'found'}">Tất cả đồ nhặt được</c:when>
             <c:otherwise>Tất cả đồ báo mất</c:otherwise>
         </c:choose>
@@ -28,23 +30,23 @@
         <div class="lf-page-header">
             <h1 class="lf-page-header__title">
                 <c:choose>
+                    <c:when test="${type == 'all'}">Kết quả tìm kiếm</c:when>
                     <c:when test="${type == 'found'}">Tất cả đồ nhặt được</c:when>
                     <c:otherwise>Tất cả đồ báo mất</c:otherwise>
                 </c:choose>
             </h1>
             <p class="lf-page-header__sub">
-                Danh sách đầy đủ các tin
                 <c:choose>
-                    <c:when test="${type == 'found'}">đồ nhặt được</c:when>
-                    <c:otherwise>đồ báo mất</c:otherwise>
+                    <c:when test="${type == 'all'}">Hiển thị cả đồ nhặt được và đồ báo mất, ưu tiên đồ nhặt được.</c:when>
+                    <c:when test="${type == 'found'}">Danh sách đầy đủ các tin đồ nhặt được trong hệ thống.</c:when>
+                    <c:otherwise>Danh sách đầy đủ các tin đồ báo mất trong hệ thống.</c:otherwise>
                 </c:choose>
-                trong hệ thống.
             </p>
         </div>
 
         <div class="flex gap-lg" style="align-items:flex-start;">
             <!-- Bộ lọc (sidebar ~30%) -->
-            <aside class="lf-card" style="flex:0 0 280px;max-width:320px; padding:20px;">
+            <aside class="lf-card" style="flex:0 0 320px; max-width:360px; padding:24px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
                 <form action="${pageContext.request.contextPath}/items" method="get" class="lf-form" id="filterForm">
                     <input type="hidden" name="type" value="${type}"/>
 
@@ -74,14 +76,19 @@
 
                     <div class="lf-form-group" style="margin-bottom:24px;">
                         <label class="lf-label" for="locationId" style="font-size:1.05rem; margin-bottom:8px;">Chọn khu vực</label>
-                        <select id="locationId" name="locationId" class="lf-select" style="padding:10px;" onchange="this.form.submit()">
-                            <option value="">Toàn quốc</option>
-                            <c:forEach var="l" items="${locations}">
-                                <option value="${l.locationId}" ${selectedLocationId == l.locationId ? 'selected' : ''}>
-                                    ${l.name}
-                                </option>
-                            </c:forEach>
-                        </select>
+                        <div class="lf-filter-select-container" style="width: 100%;">
+                            <select id="locationId" name="locationId" class="lf-filter-select" style="width: 100%;" onchange="this.form.submit()">
+                                <option value="">Khu vực</option>
+                                <c:forEach var="l" items="${locations}">
+                                    <option value="${l.locationId}" ${selectedLocationId == l.locationId ? 'selected' : ''}>
+                                        ${l.name}
+                                    </option>
+                                </c:forEach>
+                            </select>
+                            <div class="lf-filter-select-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex gap-md" style="margin-top:20px;">
@@ -97,7 +104,7 @@
                     <c:when test="${not empty items}">
                         <div class="lf-items-grid">
                             <c:forEach var="it" items="${items}">
-                                <div class="lf-item-card">
+                                <div class="lf-item-card ${type == 'found' ? 'border-found' : 'border-lost'}">
                                         <!-- Thumbnail Image -->
                                         <c:set var="firstImg" value="${it.imagesJSON}"/>
                                         <c:if test="${not empty firstImg}">
@@ -135,6 +142,22 @@
                                 </div>
                             </c:forEach>
                         </div>
+
+                        <!-- Paging Navigation -->
+                        <c:if test="${totalPages > 1}">
+                            <div class="lf-pagination" style="display:flex; justify-content:center; gap:16px; margin-top:40px; margin-bottom:20px;">
+                                <c:if test="${currentPage > 1}">
+                                    <a href="?type=${type}&search=${searchKeyword}&categoryId=${selectedCategoryId}&locationId=${selectedLocationId}&page=${currentPage - 1}" class="lf-page-btn" style="border:1.5px solid #fd7e14; border-radius:8px; padding:10px 24px; color:#fd7e14; text-decoration:none; font-weight:600; font-size:0.95rem; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                                        &lt; Trước
+                                    </a>
+                                </c:if>
+                                <c:if test="${currentPage < totalPages}">
+                                    <a href="?type=${type}&search=${searchKeyword}&categoryId=${selectedCategoryId}&locationId=${selectedLocationId}&page=${currentPage + 1}" class="lf-page-btn" style="border:1.5px solid #fd7e14; border-radius:8px; padding:10px 24px; color:#fd7e14; text-decoration:none; font-weight:600; font-size:0.95rem; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                                        Tiếp &gt;
+                                    </a>
+                                </c:if>
+                            </div>
+                        </c:if>
                     </c:when>
                     <c:otherwise>
                         <lf:emptyState title="Chưa có tin nào." sub="Hãy quay lại sau hoặc đăng tin mới nhé!"/>
@@ -144,13 +167,12 @@
         </div>
     </main>
 
-    <footer class="lf-footer">
-        © 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.
-    </footer>
+    <lf:footer />
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
 </body>
 </html>
+
 

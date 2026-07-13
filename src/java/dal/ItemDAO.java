@@ -225,10 +225,14 @@ public class ItemDAO extends DBContext {
                 .append("INNER JOIN Categories c ON i.category_id = c.category_id ")
                 .append("INNER JOIN Locations l ON i.location_id = l.location_id ")
                 .append("INNER JOIN Users u ON i.user_id = u.user_id ")
-                .append("WHERE i.type = ? AND i.status = 'active' ");
+                .append("WHERE i.status = 'active' ");
 
         List<Object> params = new ArrayList<>();
-        params.add(type);
+
+        if (type != null && !type.trim().isEmpty()) {
+            sql.append("AND i.type = ? ");
+            params.add(type);
+        }
 
         if (categoryId != null && categoryId > 0) {
             sql.append("AND i.category_id = ? ");
@@ -250,7 +254,12 @@ public class ItemDAO extends DBContext {
             params.add(new Timestamp(toDate.getTime()));
         }
 
-        sql.append("ORDER BY i.created_at DESC");
+        // Prioritize 'found' items first when showing all types
+        if (type == null || type.trim().isEmpty()) {
+            sql.append("ORDER BY CASE WHEN i.type = 'found' THEN 0 ELSE 1 END, i.created_at DESC");
+        } else {
+            sql.append("ORDER BY i.created_at DESC");
+        }
 
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) {
@@ -391,7 +400,7 @@ public class ItemDAO extends DBContext {
                 deleteClaims.executeUpdate();
             }
 
-            try (PreparedStatement deleteMessages = connection.prepareStatement("DELETE FROM Messages WHERE item_id = ?")) {
+            try (PreparedStatement deleteMessages = connection.prepareStatement("DELETE FROM Message WHERE related_item_id = ?")) {
                 deleteMessages.setInt(1, id);
                 deleteMessages.executeUpdate();
             }
@@ -557,16 +566,71 @@ public class ItemDAO extends DBContext {
                 .append("INNER JOIN Categories c ON i.category_id = c.category_id ")
                 .append("INNER JOIN Locations l ON i.location_id = l.location_id ")
                 .append("INNER JOIN Users u ON i.user_id = u.user_id ")
-                .append("WHERE i.type = ? AND i.status = 'active' ");
+                .append("WHERE i.status = 'active' ");
 
         List<Object> params = new ArrayList<>();
-        params.add(type);
+
+        // If type is specified (not null), filter by type; otherwise search all
+        if (type != null && !type.trim().isEmpty()) {
+            sql.append("AND i.type = ? ");
+            params.add(type);
+        }
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append("AND (i.title LIKE ? OR i.description LIKE ?) ");
-            String searchPattern = "%" + keyword.trim() + "%";
-            params.add(searchPattern);
-            params.add(searchPattern);
+            // Smart synonym mapping for Vietnamese search
+            java.util.Map<String, java.util.List<String>> synonyms = new java.util.HashMap<>();
+            java.util.List<String> cccdList = java.util.Arrays.asList("cccd", "căn cước", "can cuoc", "cmnd", "chứng minh", "chung minh", "giấy tờ", "giay to");
+            for (String s : cccdList) synonyms.put(s, cccdList);
+            
+            java.util.List<String> mtList = java.util.Arrays.asList("mt", "máy tính", "may tinh", "laptop", "notebook");
+            for (String s : mtList) synonyms.put(s, mtList);
+            
+            java.util.List<String> watchList = java.util.Arrays.asList("watch", "đồng hồ", "dong ho");
+            for (String s : watchList) synonyms.put(s, watchList);
+            
+            java.util.List<String> phoneList = java.util.Arrays.asList("phone", "điện thoại", "dien thoai", "dt", "đt", "iphone", "samsung");
+            for (String s : phoneList) synonyms.put(s, phoneList);
+            
+            java.util.List<String> walletList = java.util.Arrays.asList("wallet", "ví", "bóp", "vi", "bop");
+            for (String s : walletList) synonyms.put(s, walletList);
+            
+            java.util.List<String> keyList = java.util.Arrays.asList("key", "chìa khóa", "chia khoa", "chìa", "chia");
+            for (String s : keyList) synonyms.put(s, keyList);
+            
+            java.util.List<String> sdtList = java.util.Arrays.asList("sđt", "sdt", "số điện thoại", "so dien thoai");
+            for (String s : sdtList) synonyms.put(s, sdtList);
+
+            java.util.List<String> bagList = java.util.Arrays.asList("bag", "túi", "tui", "balo", "ba lô", "ba lo", "cặp", "cap");
+            for (String s : bagList) synonyms.put(s, bagList);
+
+            java.util.List<String> petList = java.util.Arrays.asList("pet", "thú cưng", "thu cung", "chó", "cho", "mèo", "meo", "dog", "cat");
+            for (String s : petList) synonyms.put(s, petList);
+
+            java.util.List<String> bookList = java.util.Arrays.asList("book", "sách", "sach", "vở", "vo", "tập", "tap");
+            for (String s : bookList) synonyms.put(s, bookList);
+
+            String lowerKey = keyword.toLowerCase().trim();
+            java.util.List<String> searchWords = synonyms.get(lowerKey);
+            if (searchWords == null) {
+                searchWords = java.util.Collections.singletonList(lowerKey);
+            }
+            
+            sql.append("AND (");
+            for (int k = 0; k < searchWords.size(); k++) {
+                if (k > 0) {
+                    sql.append(" OR ");
+                }
+                sql.append("LOWER(i.title) LIKE ? OR LOWER(i.description) LIKE ? OR LOWER(c.name) LIKE ? OR LOWER(l.name) LIKE ?");
+            }
+            sql.append(") ");
+            
+            for (String sw : searchWords) {
+                String searchPattern = "%" + sw + "%";
+                params.add(searchPattern);
+                params.add(searchPattern);
+                params.add(searchPattern);
+                params.add(searchPattern);
+            }
         }
 
         if (categoryId != null && categoryId > 0) {
@@ -579,7 +643,12 @@ public class ItemDAO extends DBContext {
             params.add(locationId);
         }
 
-        sql.append("ORDER BY i.created_at DESC");
+        // Prioritize 'found' items first, then sort by newest
+        if (type == null || type.trim().isEmpty()) {
+            sql.append("ORDER BY CASE WHEN i.type = 'found' THEN 0 ELSE 1 END, i.created_at DESC");
+        } else {
+            sql.append("ORDER BY i.created_at DESC");
+        }
 
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) {

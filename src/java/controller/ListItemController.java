@@ -16,17 +16,6 @@ public class ListItemController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        ItemDAO dao = new ItemDAO();
-
-        List<Items> lostItems = dao.getItemsByType("lost");
-        List<Items> foundItems = dao.getItemsByType("found");
-
-        request.setAttribute("lostItems", lostItems);
-        request.setAttribute("foundItems", foundItems);
-        request.setAttribute("lostCount", lostItems.size());
-        request.setAttribute("foundCount", foundItems.size());
-        request.setAttribute("totalCount", lostItems.size() + foundItems.size());
-
-        request.getRequestDispatcher("/WEB-INF/views/listItems.jsp").forward(request, response);
+        response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=items");
     }
 }

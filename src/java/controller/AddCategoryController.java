@@ -38,7 +38,7 @@ public class AddCategoryController extends HttpServlet {
         try {
             CategoryDAO dao = new CategoryDAO();
             dao.addCategory(new Categories(0, name.trim(), describe.trim()));
-            response.sendRedirect("manage_categories");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=categories");
         } catch (Exception e) {
             request.setAttribute("error", "Khong the them danh muc.");
             request.getRequestDispatcher("/WEB-INF/views/addCategory.jsp").forward(request, response);

@@ -68,7 +68,7 @@ public class DeleteClaimController extends HttpServlet {
 
             dao.deleteClaim(id);
 
-            response.sendRedirect("manage_claims");
+            response.sendRedirect(request.getContextPath() + "/admin/data_management?tab=claims");
 
         } catch (NumberFormatException e) {
             System.out.println(e);

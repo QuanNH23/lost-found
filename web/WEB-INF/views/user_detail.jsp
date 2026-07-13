@@ -36,7 +36,7 @@
         <c:set var="u" value="${requestScope.userDetail}"/>
         <div class="lf-card" style="max-width:720px;">
             <div class="flex gap-md" style="align-items:center;margin-bottom:var(--sp-md);">
-                <lf:avatar fullName="${u.fullName}" className="lf-navbar__avatar"/>
+                <lf:avatar fullName="${u.fullName}" avatarUrl="${u.avatarUrl}" className="lf-navbar__avatar"/>
                 <div>
                     <div class="fw-bold" style="font-size:1.1rem;">${u.fullName}</div>
                     <div class="text-sm text-muted">@${u.username}</div>
@@ -60,10 +60,11 @@
         </div>
     </main>
 
-    <footer class="lf-footer">© 2026 Group 8, SE2022, FPT University. All rights reserved. School Lost & Found Management System.</footer>
+    <lf:footer />
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
 </body>
 </html>
+
 

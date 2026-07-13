@@ -157,9 +157,14 @@ public class reportLostController extends HttpServlet {
         StringBuilder json = new StringBuilder("[");
         boolean hasImage = false;
 
+        int count = 0;
         for (Part part : request.getParts()) {
             if (!"images".equals(part.getName()) || part.getSize() <= 0) {
                 continue;
+            }
+
+            if (count >= 5) {
+                break; // Giới hạn tối đa 5 ảnh
             }
 
             String contentType = part.getContentType();
@@ -182,6 +187,7 @@ public class reportLostController extends HttpServlet {
             }
             json.append("\"").append(jsonEscape(relativePath)).append("\"");
             hasImage = true;
+            count++;
         }
 
         json.append("]");
