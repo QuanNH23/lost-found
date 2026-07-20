@@ -69,7 +69,14 @@
                                         </a>
                                         <span class="lf-inbox-msg__date">${msg.createdAt}</span>
                                     </div>
-                                    <div class="lf-inbox-msg__subject">📦 ${msg.itemTitle} — ${msg.title}</div>
+                                    <div class="lf-inbox-msg__subject">
+                                        📦 ${msg.itemTitle} — 
+                                        <c:choose>
+                                            <c:when test="${msg.title eq 'Reply'}">Trả lời bình luận</c:when>
+                                            <c:when test="${msg.title eq 'Comment'}">Bình luận mới</c:when>
+                                            <c:otherwise>${msg.title}</c:otherwise>
+                                        </c:choose>
+                                    </div>
                                     <div class="lf-inbox-msg__preview">${msg.message}</div>
                                     <div class="mt-sm">
                                         <a href="${pageContext.request.contextPath}/item_detail?id=${msg.itemId}"

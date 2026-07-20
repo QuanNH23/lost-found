@@ -74,20 +74,11 @@ public class myItemsController extends HttpServlet {
     }
 
     private void deleteImageFiles(List<String> relativePaths) {
-        String appRoot = getServletContext().getRealPath("/");
-        if (appRoot == null || relativePaths == null) {
+        if (relativePaths == null) {
             return;
         }
-
-        Path root = Paths.get(appRoot);
-
         for (String relPath : relativePaths) {
-            try {
-                Path filePath = root.resolve(relPath.replace("/", "\\")).normalize();
-                Files.deleteIfExists(filePath);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            util.FileUtil.deleteFile(relPath, getServletContext());
         }
     }
 

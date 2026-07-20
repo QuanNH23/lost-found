@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.Message;
+import model.Users;
 
 public class MessageDAO extends DBContext {
 
@@ -16,7 +17,7 @@ public class MessageDAO extends DBContext {
             return list;
         }
 
-        String sql = "SELECT message_id, user_id, title, message, is_read, related_item_id, created_at "
+        String sql = "SELECT message_id, user_id, title, message, is_read, related_item_id, created_at, parent_id, sender_id "
                 + "FROM Message "
                 + "WHERE related_item_id = ? "
                 + "ORDER BY created_at ASC";
@@ -32,6 +33,8 @@ public class MessageDAO extends DBContext {
                     msg.setIsRead(rs.getBoolean("is_read"));
                     msg.setRelatedItemId(rs.getInt("related_item_id"));
                     msg.setCreatedAt(rs.getTimestamp("created_at"));
+                    msg.setParentId(rs.getObject("parent_id") != null ? rs.getInt("parent_id") : null);
+                    msg.setSenderId(rs.getObject("sender_id") != null ? rs.getInt("sender_id") : null);
                     list.add(msg);
                 }
             }
@@ -57,6 +60,35 @@ public class MessageDAO extends DBContext {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     map.put(rs.getInt("user_id"), rs.getString("full_name"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return map;
+    }
+
+    public Map<Integer, Users> getCommentersByItemId(int itemId) {
+        Map<Integer, Users> map = new HashMap<>();
+        if (connection == null) {
+            return map;
+        }
+
+        String sql = "SELECT DISTINCT u.user_id, u.full_name, u.phone_number, u.avatar_url "
+                + "FROM Message m "
+                + "INNER JOIN Users u ON m.user_id = u.user_id "
+                + "WHERE m.related_item_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Users u = new Users();
+                    u.setUserId(rs.getInt("user_id"));
+                    u.setFullName(rs.getString("full_name"));
+                    u.setPhoneNumber(rs.getString("phone_number"));
+                    u.setAvatarUrl(rs.getString("avatar_url"));
+                    map.put(u.getUserId(), u);
                 }
             }
         } catch (Exception e) {
@@ -105,6 +137,69 @@ public class MessageDAO extends DBContext {
         return false;
     }
 
+    public Message getMessageById(int messageId) {
+        if (connection == null) return null;
+        String sql = "SELECT message_id, user_id, title, message, is_read, related_item_id, created_at, parent_id, sender_id "
+                   + "FROM Message WHERE message_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, messageId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Message msg = new Message();
+                    msg.setMessageId(rs.getInt("message_id"));
+                    msg.setUserId(rs.getInt("user_id"));
+                    msg.setTitle(rs.getString("title"));
+                    msg.setMessage(rs.getString("message"));
+                    msg.setIsRead(rs.getBoolean("is_read"));
+                    msg.setRelatedItemId(rs.getInt("related_item_id"));
+                    msg.setCreatedAt(rs.getTimestamp("created_at"));
+                    msg.setParentId(rs.getObject("parent_id") != null ? rs.getInt("parent_id") : null);
+                    msg.setSenderId(rs.getObject("sender_id") != null ? rs.getInt("sender_id") : null);
+                    return msg;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean insertComment(int userId, int itemId, String title, String content, Integer parentId) {
+        if (connection == null) return false;
+        String sql = "INSERT INTO Message (user_id, title, message, is_read, related_item_id, parent_id) VALUES (?, ?, ?, 0, ?, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, title);
+            ps.setString(3, content);
+            ps.setInt(4, itemId);
+            if (parentId == null) {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(5, parentId);
+            }
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean insertReplyNotification(int receiverId, int senderId, int itemId, String content) {
+        if (connection == null) return false;
+        String sql = "INSERT INTO Message (user_id, sender_id, title, message, is_read, related_item_id) "
+                   + "VALUES (?, ?, 'Reply', ?, 0, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, receiverId);
+            ps.setInt(2, senderId);
+            ps.setString(3, content);
+            ps.setInt(4, itemId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean insertAccountNotification(int userId, String title, String content) {
         if (connection == null) {
             return false;
@@ -131,16 +226,19 @@ public class MessageDAO extends DBContext {
         if (connection == null) return list;
         
         String sql = "SELECT m.message_id, m.title, m.message, m.is_read, m.created_at, "
-                   + "u.user_id AS sender_id, u.full_name AS sender_name, i.title AS item_title, i.item_id "
+                   + "COALESCE(s.user_id, u.user_id) AS sender_id, COALESCE(s.full_name, u.full_name) AS sender_name, i.title AS item_title, i.item_id "
                    + "FROM Message m "
                    + "LEFT JOIN Items i ON m.related_item_id = i.item_id "
                    + "LEFT JOIN Users u ON m.user_id = u.user_id "
+                   + "LEFT JOIN Users s ON m.sender_id = s.user_id "
                    + "WHERE (i.user_id = ? AND m.title = 'Comment' AND m.user_id != i.user_id) "
                    + "   OR (m.related_item_id IS NULL AND m.user_id = ? AND m.title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected')) "
+                   + "   OR (m.user_id = ? AND m.title = 'Reply') "
                    + "ORDER BY m.created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, receiverId);
             ps.setInt(2, receiverId);
+            ps.setInt(3, receiverId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> map = new HashMap<>();
@@ -166,10 +264,12 @@ public class MessageDAO extends DBContext {
                    + "FROM Message m "
                    + "LEFT JOIN Items i ON m.related_item_id = i.item_id "
                    + "WHERE (i.user_id = ? AND m.is_read = 0 AND m.user_id != i.user_id AND m.title = 'Comment') "
-                   + "   OR (m.related_item_id IS NULL AND m.user_id = ? AND m.is_read = 0 AND m.title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected'))";
+                   + "   OR (m.related_item_id IS NULL AND m.user_id = ? AND m.is_read = 0 AND m.title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected'))"
+                   + "   OR (m.user_id = ? AND m.is_read = 0 AND m.title = 'Reply')";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, receiverId);
             ps.setInt(2, receiverId);
+            ps.setInt(3, receiverId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);
             }
@@ -190,12 +290,14 @@ public class MessageDAO extends DBContext {
     public void markAllInboxMessagesAsRead(int receiverId) {
         if (connection == null) return;
         String sql = "UPDATE Message SET is_read = 1 "
-                   + "WHERE (related_item_id IN (SELECT item_id FROM Items WHERE user_id = ?) AND is_read = 0 AND user_id != ?) "
-                   + "   OR (related_item_id IS NULL AND user_id = ? AND is_read = 0 AND title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected'))";
+                   + "WHERE (related_item_id IN (SELECT item_id FROM Items WHERE user_id = ?) AND is_read = 0 AND user_id != ? AND title = 'Comment') "
+                   + "   OR (related_item_id IS NULL AND user_id = ? AND is_read = 0 AND title IN ('System', 'Account', 'Notification', 'Support_Resolved', 'Support_Rejected'))"
+                   + "   OR (user_id = ? AND is_read = 0 AND title = 'Reply')";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, receiverId);
             ps.setInt(2, receiverId);
             ps.setInt(3, receiverId);
+            ps.setInt(4, receiverId);
             ps.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }
@@ -246,7 +348,7 @@ public class MessageDAO extends DBContext {
     public int countReportsByItemId(int itemId) {
         if (connection == null) return 0;
         
-        String sql = "SELECT COUNT(DISTINCT user_id) FROM Message WHERE related_item_id = ? AND title LIKE '[REPORT]%'";
+        String sql = "SELECT COUNT(DISTINCT user_id) FROM Message WHERE related_item_id = ? AND LEFT(title, 8) = '[REPORT]'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, itemId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -263,7 +365,7 @@ public class MessageDAO extends DBContext {
     public boolean hasUserReportedItem(int userId, int itemId) {
         if (connection == null) return false;
         
-        String sql = "SELECT TOP 1 message_id FROM Message WHERE user_id = ? AND related_item_id = ? AND title LIKE '[REPORT]%'";
+        String sql = "SELECT TOP 1 message_id FROM Message WHERE user_id = ? AND related_item_id = ? AND LEFT(title, 8) = '[REPORT]'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setInt(2, itemId);
@@ -282,11 +384,11 @@ public class MessageDAO extends DBContext {
         
         String sql = "SELECT i.item_id, i.title, i.user_id as owner_id, u.full_name as owner_name, u.phone_number as owner_phone, "
                    + "COUNT(DISTINCT m.user_id) as report_count, MAX(m.created_at) as latest_report_time, "
-                   + "(SELECT TOP 1 message FROM Message sub_m WHERE sub_m.related_item_id = i.item_id AND sub_m.title LIKE '[REPORT]%' ORDER BY sub_m.created_at DESC) as latest_reason "
+                   + "(SELECT TOP 1 message FROM Message sub_m WHERE sub_m.related_item_id = i.item_id AND LEFT(sub_m.title, 8) = '[REPORT]' ORDER BY sub_m.created_at DESC) as latest_reason "
                    + "FROM Items i "
                    + "INNER JOIN Message m ON i.item_id = m.related_item_id "
                    + "INNER JOIN Users u ON i.user_id = u.user_id "
-                   + "WHERE m.title LIKE '[REPORT]%' AND i.status = 'active' "
+                   + "WHERE LEFT(m.title, 8) = '[REPORT]' AND i.status = 'active' "
                    + "GROUP BY i.item_id, i.title, i.user_id, u.full_name, u.phone_number "
                    + "ORDER BY latest_report_time DESC";
                    
@@ -320,7 +422,7 @@ public class MessageDAO extends DBContext {
         if (connection == null) return list;
         String sql = "SELECT DISTINCT u.full_name, u.phone_number FROM Message m "
                    + "INNER JOIN Users u ON m.user_id = u.user_id "
-                   + "WHERE m.related_item_id = ? AND m.title LIKE '[REPORT]%'";
+                   + "WHERE m.related_item_id = ? AND LEFT(m.title, 8) = '[REPORT]'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, itemId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -342,7 +444,7 @@ public class MessageDAO extends DBContext {
         List<String> reporters = new ArrayList<>();
         String sql = "SELECT DISTINCT u.full_name FROM Message m "
                    + "INNER JOIN Users u ON m.user_id = u.user_id "
-                   + "WHERE m.related_item_id = ? AND m.title LIKE '[REPORT]%'";
+                   + "WHERE m.related_item_id = ? AND LEFT(m.title, 8) = '[REPORT]'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, itemId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -361,7 +463,7 @@ public class MessageDAO extends DBContext {
         String sql = "SELECT COUNT(m.message_id) "
                    + "FROM Message m "
                    + "INNER JOIN Items i ON m.related_item_id = i.item_id "
-                   + "WHERE i.user_id = ? AND m.title LIKE '[REPORT]%'";
+                   + "WHERE i.user_id = ? AND LEFT(m.title, 8) = '[REPORT]'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -375,7 +477,7 @@ public class MessageDAO extends DBContext {
 
     public boolean deleteReportsByItemId(int itemId) {
         if (connection == null) return false;
-        String sql = "DELETE FROM Message WHERE related_item_id = ? AND title LIKE '[REPORT]%'";
+        String sql = "DELETE FROM Message WHERE related_item_id = ? AND LEFT(title, 8) = '[REPORT]'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, itemId);
             return ps.executeUpdate() > 0;
@@ -420,7 +522,7 @@ public class MessageDAO extends DBContext {
         } catch (Exception e) { e.printStackTrace(); }
 
         // 3. Count reported items (active posts with at least 1 report)
-        String sqlReports = "SELECT COUNT(DISTINCT i.item_id) FROM Items i INNER JOIN Message m ON i.item_id = m.related_item_id WHERE m.title LIKE '[REPORT]%' AND i.status = 'active'";
+        String sqlReports = "SELECT COUNT(DISTINCT i.item_id) FROM Items i INNER JOIN Message m ON i.item_id = m.related_item_id WHERE LEFT(m.title, 8) = '[REPORT]' AND i.status = 'active'";
         try (PreparedStatement ps = connection.prepareStatement(sqlReports);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next() && rs.getInt(1) > 0) {

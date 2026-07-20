@@ -21,6 +21,23 @@ import model.Users;
 
 public class itemDetailController extends HttpServlet {
 
+    public static class CommentNode {
+        private Message comment;
+        private List<CommentNode> replies = new ArrayList<>();
+
+        public CommentNode(Message comment) {
+            this.comment = comment;
+        }
+
+        public Message getComment() {
+            return comment;
+        }
+
+        public List<CommentNode> getReplies() {
+            return replies;
+        }
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
@@ -78,10 +95,30 @@ public class itemDetailController extends HttpServlet {
         }
         
         List<Message> allMessages = messageDAO.getMessagesByItemId(itemId);
-        List<Message> itemMessages = new ArrayList<>();
+        List<Message> comments = new ArrayList<>();
         for (Message msg : allMessages) {
             if ("Comment".equalsIgnoreCase(msg.getTitle())) {
-                itemMessages.add(msg);
+                comments.add(msg);
+            }
+        }
+
+        List<CommentNode> rootNodes = new ArrayList<>();
+        Map<Integer, CommentNode> nodeMap = new HashMap<>();
+        for (Message c : comments) {
+            CommentNode node = new CommentNode(c);
+            nodeMap.put(c.getMessageId(), node);
+        }
+        for (Message c : comments) {
+            CommentNode node = nodeMap.get(c.getMessageId());
+            if (c.getParentId() == null || c.getParentId() == 0) {
+                rootNodes.add(node);
+            } else {
+                CommentNode parentNode = nodeMap.get(c.getParentId());
+                if (parentNode != null) {
+                    parentNode.getReplies().add(node);
+                } else {
+                    rootNodes.add(node);
+                }
             }
         }
         boolean isItemOwner = currentUser != null && currentUser.getUserId() == itemDetail.getUserId();
@@ -118,8 +155,9 @@ public class itemDetailController extends HttpServlet {
         }
 
         request.setAttribute("itemDetail", itemDetail);
-        request.setAttribute("itemMessages", itemMessages);
+        request.setAttribute("commentTree", rootNodes);
         request.setAttribute("senderNames", messageDAO.getSenderNamesByItemId(itemId));
+        request.setAttribute("commenters", messageDAO.getCommentersByItemId(itemId));
         request.setAttribute("imagePaths", parseImagePaths(itemDetail.getImagesJSON()));
         request.setAttribute("claimByClaimer", claimByClaimer);
         request.setAttribute("isItemOwner", isItemOwner);
@@ -152,7 +190,22 @@ public class itemDetailController extends HttpServlet {
         String content = request.getParameter("message");
         MessageDAO messageDAO = new MessageDAO();
 
-        if (messageDAO.insertMessage(currentUser.getUserId(), itemId, title, content)) {
+        String parentIdRaw = request.getParameter("parent_id");
+        Integer parentId = null;
+        if (parentIdRaw != null && !parentIdRaw.trim().isEmpty()) {
+            try {
+                parentId = Integer.parseInt(parentIdRaw.trim());
+            } catch (Exception ignored) {}
+        }
+
+        if (messageDAO.insertComment(currentUser.getUserId(), itemId, title, content, parentId)) {
+            if (parentId != null) {
+                Message parentMsg = messageDAO.getMessageById(parentId);
+                if (parentMsg != null && parentMsg.getUserId() != currentUser.getUserId()) {
+                    String notifMsg = "đã trả lời bình luận của bạn.";
+                    messageDAO.insertReplyNotification(parentMsg.getUserId(), currentUser.getUserId(), itemId, notifMsg);
+                }
+            }
             request.getSession().setAttribute("message", "Da gui binh luan!");
             response.sendRedirect("item_detail?id=" + itemId);
         } else {

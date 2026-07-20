@@ -159,10 +159,6 @@ public class editProfileController extends HttpServlet {
             if (avatarPart != null && avatarPart.getSize() > 0) {
                 String contentType = avatarPart.getContentType();
                 if (contentType != null && contentType.startsWith("image/")) {
-                    String uploadRealPath = getServletContext().getRealPath("/uploads");
-                    Path uploadPath = Paths.get(uploadRealPath);
-                    Files.createDirectories(uploadPath);
-
                     String submittedName = avatarPart.getSubmittedFileName();
                     String extension = ".jpg"; // fallback
                     if ("image/png".equalsIgnoreCase(contentType)) extension = ".png";
@@ -173,10 +169,13 @@ public class editProfileController extends HttpServlet {
                     }
 
                     String savedName = "avatar_" + currentUser.getUserId() + "_" + System.currentTimeMillis() + extension;
-                    Path targetPath = uploadPath.resolve(savedName);
-                    try (InputStream in = avatarPart.getInputStream()) {
-                        Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    
+                    // Delete old avatar if it exists
+                    if (currentUser.getAvatarUrl() != null && currentUser.getAvatarUrl().startsWith("uploads/")) {
+                        util.FileUtil.deleteFile(currentUser.getAvatarUrl(), getServletContext());
                     }
+                    
+                    util.FileUtil.saveUploadedFile(avatarPart, savedName, getServletContext(), "uploads");
                     avatarUrl = "uploads/" + savedName;
                 } else {
                     request.setAttribute("ERROR", "Tệp tải lên làm avatar bắt buộc phải là ảnh.");

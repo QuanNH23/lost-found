@@ -115,12 +115,8 @@
                                         </c:if>
                                         <c:if test="${empty firstImg}">
                                             <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
-                                                <div class="lf-item-card__thumb-placeholder">
-                                                    <c:choose>
-                                                        <c:when test="${type == 'found'}">🟢</c:when>
-                                                        <c:otherwise>📦</c:otherwise>
-                                                    </c:choose>
-                                                </div>
+                                                <c:set var="demoIdx" value="${(it.itemId % 4) + 1}"/>
+                                                <img src="${pageContext.request.contextPath}/uploads/demo/demo_${demoIdx}.png" class="lf-item-card__thumb" alt="Ảnh đồ vật demo">
                                             </a>
                                         </c:if>
                                         <div class="flex flex-between gap-sm" style="padding: 12px 12px 0;">

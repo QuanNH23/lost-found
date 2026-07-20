@@ -300,9 +300,8 @@
                         <img src="${pageContext.request.contextPath}/${imagePaths[0]}" alt="${itemDetail.title}" class="lf-detail-main-img">
                     </c:if>
                     <c:if test="${empty imagePaths}">
-                        <div class="lf-detail-no-img">
-                            <span>📷 Không có hình ảnh</span>
-                        </div>
+                        <c:set var="demoIdx" value="${(itemDetail.itemId % 4) + 1}"/>
+                        <img src="${pageContext.request.contextPath}/uploads/demo/demo_${demoIdx}.png" alt="${itemDetail.title}" class="lf-detail-main-img">
                     </c:if>
                 </div>
                 
@@ -312,6 +311,13 @@
                         <span class="lf-info-label">ĐỊA CHỈ</span>
                         <span class="lf-info-val" style="color:#0284c7; font-weight:700;">📍 ${empty itemDetail.locationName ? 'Chưa xác định' : itemDetail.locationName}</span>
                     </div>
+                    
+                    <c:if test="${not empty itemDetail.locationDetails}">
+                        <div class="lf-info-item mt-sm">
+                            <span class="lf-info-label">CHI TIẾT ĐỊA ĐIỂM</span>
+                            <span class="lf-info-val" style="font-weight:600; color:#334155;">🏠 ${itemDetail.locationDetails}</span>
+                        </div>
+                    </c:if>
                     
                     <div class="lf-info-item mt-xs">
                         <span class="badge" style="background:#f1f5f9; color:#475569; padding:6px 12px; border-radius:4px; font-weight:600; font-size:0.85rem;">🏷️ ${empty itemDetail.categoryName ? 'Đồ vật' : itemDetail.categoryName}</span>
@@ -400,14 +406,61 @@
                     <!-- Comments List -->
                     <div class="lf-comments-list">
                         <c:choose>
-                            <c:when test="${not empty itemMessages}">
-                                <c:forEach var="m" items="${itemMessages}">
-                                    <div class="lf-comment-item">
-                                        <div class="lf-comment-header">
-                                            <span class="lf-comment-user">${senderNames[m.userId]}</span>
-                                            <span class="lf-comment-time">${m.createdAt}</span>
+                            <c:when test="${not empty commentTree}">
+                                <c:forEach var="node" items="${commentTree}">
+                                    <c:set var="c" value="${node.comment}"/>
+                                    <div class="lf-comment-item" id="comment-${c.messageId}" style="border-bottom:1px solid #f1f5f9; padding: 16px 0;">
+                                        <!-- Root Comment -->
+                                        <div class="lf-comment-main">
+                                            <div class="lf-comment-header" style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                                                <a href="javascript:void(0);" onclick="showContactInfo('${fn:escapeXml(senderNames[c.userId])}', '${fn:escapeXml(commenters[c.userId].phoneNumber)}', ${not empty sessionScope.currentUser})" class="lf-comment-user" style="font-weight:700; color:#0f172a; text-decoration:none; cursor:pointer;">
+                                                    👤 ${senderNames[c.userId]}
+                                                </a>
+                                                <span class="lf-comment-time" style="font-size:0.8rem; color:#94a3b8;">${c.createdAt}</span>
+                                            </div>
+                                            <div class="lf-comment-body" style="color:#334155; line-height:1.5; font-size:0.95rem;">${c.message}</div>
+                                            
+                                            <!-- Reply Button -->
+                                            <c:if test="${not empty sessionScope.currentUser}">
+                                                <div style="margin-top: 8px;">
+                                                    <a href="javascript:void(0);" onclick="toggleReplyForm(${c.messageId})" style="font-size:0.85rem; font-weight:600; color:#0284c7; text-decoration:none;">↩️ Trả lời</a>
+                                                </div>
+                                            </c:if>
                                         </div>
-                                        <div class="lf-comment-body">${m.message}</div>
+
+                                        <!-- Nested Replies -->
+                                        <div class="lf-comment-replies" style="margin-left: 36px; margin-top: 12px; padding-left: 14px; border-left: 2px solid #e2e8f0;">
+                                            <c:forEach var="replyNode" items="${node.replies}">
+                                                <c:set var="r" value="${replyNode.comment}"/>
+                                                <div class="lf-reply-item" id="comment-${r.messageId}" style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9;">
+                                                    <div class="lf-comment-header" style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                                        <a href="javascript:void(0);" onclick="showContactInfo('${fn:escapeXml(senderNames[r.userId])}', '${fn:escapeXml(commenters[r.userId].phoneNumber)}', ${not empty sessionScope.currentUser})" class="lf-comment-user" style="font-weight:700; color:#475569; font-size:0.9rem; text-decoration:none; cursor:pointer;">
+                                                            👤 ${senderNames[r.userId]}
+                                                        </a>
+                                                        <span class="lf-comment-time" style="font-size:0.75rem; color:#94a3b8;">${r.createdAt}</span>
+                                                    </div>
+                                                    <div class="lf-comment-body" style="color:#475569; line-height:1.4; font-size:0.9rem;">${r.message}</div>
+                                                </div>
+                                            </c:forEach>
+
+                                            <!-- Inline Reply Form (hidden by default) -->
+                                            <c:if test="${not empty sessionScope.currentUser}">
+                                                <div id="reply-form-box-${c.messageId}" style="display:none; margin-top: 12px; background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                                    <form action="${pageContext.request.contextPath}/item_detail" method="post" class="lf-form">
+                                                        <input type="hidden" name="action" value="send_message">
+                                                        <input type="hidden" name="item_id" value="${itemDetail.itemId}">
+                                                        <input type="hidden" name="parent_id" value="${c.messageId}">
+                                                        <div class="lf-form-group mb-sm" style="margin-bottom:8px;">
+                                                            <textarea name="message" class="lf-textarea" style="background:white; min-height:60px; border-radius:6px; font-size:0.9rem; padding:8px;" placeholder="Viết phản hồi..." required minlength="2"></textarea>
+                                                        </div>
+                                                        <div style="text-align:right;">
+                                                            <button type="button" onclick="toggleReplyForm(${c.messageId})" class="btn btn-ghost btn-sm" style="padding:4px 12px; font-size:0.8rem; margin-right:8px;">Hủy</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm" style="background:#0284c7; border-color:#0284c7; padding:4px 16px; font-size:0.8rem; color:white; border-radius:6px; border:1px solid #0284c7;">Gửi</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </c:if>
+                                        </div>
                                     </div>
                                 </c:forEach>
                             </c:when>
@@ -434,7 +487,8 @@
                                                 <img src="${pageContext.request.contextPath}/${relatedImages[rit.itemId]}" alt="${rit.title}" class="lf-related-img">
                                             </c:when>
                                             <c:otherwise>
-                                                <div class="lf-related-img" style="display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#94a3b8; font-size:0.75rem;">No Img</div>
+                                                <c:set var="demoIdx" value="${(rit.itemId % 4) + 1}"/>
+                                                <img src="${pageContext.request.contextPath}/uploads/demo/demo_${demoIdx}.png" alt="${rit.title}" class="lf-related-img">
                                             </c:otherwise>
                                         </c:choose>
                                         <div class="lf-related-info">
@@ -489,6 +543,22 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/app.js"></script>
 
+<!-- Contact User Modal -->
+<div id="contactModal" class="lf-modal-overlay">
+    <div class="lf-modal" style="max-width:400px; padding: 24px; text-align: center;">
+        <button class="lf-modal__close" onclick="closeContactModal()">&times;</button>
+        <h3 style="font-weight: 800; color: var(--txt-primary); margin-top: 10px; margin-bottom: 8px; font-size:1.3rem;">Thông tin liên hệ</h3>
+        <div style="font-size: 1.05rem; font-weight: 700; color: #475569; margin-bottom: 20px;" id="contactUserName">Người dùng</div>
+        <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; font-size: 1.5rem; font-weight: 800; color: #0284c7; margin-bottom: 24px; letter-spacing: 1px;" id="contactPhoneNumber">0123456789</div>
+        <div style="display: flex; gap: 12px;">
+            <button type="button" class="btn btn-secondary flex-1" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db;" onclick="closeContactModal()">Đóng</button>
+            <a href="#" id="contactCallBtn" class="btn btn-primary flex-1" style="background:#0284c7; border-color:#0284c7; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; color:white; border-radius:6px;">
+                📞 Gọi ngay
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Custom Confirm Modal -->
 <div class="lf-modal-overlay" id="confirmModal">
     <div class="lf-modal" style="max-width:400px;">
@@ -537,6 +607,37 @@
         }
         closeConfirmModal();
     });
+
+    function toggleReplyForm(commentId) {
+        const formBox = document.getElementById('reply-form-box-' + commentId);
+        if (formBox) {
+            if (formBox.style.display === 'none' || formBox.style.display === '') {
+                formBox.style.display = 'block';
+                formBox.querySelector('textarea').focus();
+            } else {
+                formBox.style.display = 'none';
+            }
+        }
+    }
+
+    function showContactInfo(fullName, phoneNumber, isLoggedIn) {
+        if (!isLoggedIn) {
+            alert('Bạn cần đăng nhập để xem số điện thoại liên hệ!');
+            return;
+        }
+        if (!phoneNumber || phoneNumber.trim() === '' || phoneNumber.trim() === 'null') {
+            alert('Người dùng này chưa cập nhật số điện thoại.');
+            return;
+        }
+        document.getElementById('contactUserName').innerText = fullName;
+        document.getElementById('contactPhoneNumber').innerText = phoneNumber;
+        document.getElementById('contactCallBtn').href = 'tel:' + phoneNumber;
+        document.getElementById('contactModal').classList.add('open');
+    }
+
+    function closeContactModal() {
+        document.getElementById('contactModal').classList.remove('open');
+    }
 </script>
 </body>
 </html>

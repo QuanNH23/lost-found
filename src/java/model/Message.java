@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package model;
 
-/**
- *
- * @author HungKNHE194779
- */
 import java.util.Date;
 
 public class Message {
@@ -19,11 +11,13 @@ public class Message {
     private boolean isRead;
     private int relatedItemId;
     private Date createdAt;
+    private Integer parentId;
+    private Integer senderId;
 
     public Message() {
     }
 
-    public Message(int messageId, int userId, String title, String message, boolean isRead, int relatedItemId, Date createdAt) {
+    public Message(int messageId, int userId, String title, String message, boolean isRead, int relatedItemId, Date createdAt, Integer parentId, Integer senderId) {
         this.messageId = messageId;
         this.userId = userId;
         this.title = title;
@@ -31,6 +25,8 @@ public class Message {
         this.isRead = isRead;
         this.relatedItemId = relatedItemId;
         this.createdAt = createdAt;
+        this.parentId = parentId;
+        this.senderId = senderId;
     }
 
     public int getMessageId() {
@@ -89,11 +85,24 @@ public class Message {
         this.createdAt = createdAt;
     }
 
-    @Override
-    public String toString() {
-        return "Message{" + "messageId=" + messageId + ", userId=" + userId + ", title=" + title + ", message=" + message + ", isRead=" + isRead + ", relatedItemId=" + relatedItemId + ", createdAt=" + createdAt + '}';
+    public Integer getParentId() {
+        return parentId;
     }
 
-    
-}
+    public void setParentId(Integer parentId) {
+        this.parentId = parentId;
+    }
 
+    public Integer getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(Integer senderId) {
+        this.senderId = senderId;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" + "messageId=" + messageId + ", userId=" + userId + ", title=" + title + ", message=" + message + ", isRead=" + isRead + ", relatedItemId=" + relatedItemId + ", createdAt=" + createdAt + ", parentId=" + parentId + ", senderId=" + senderId + '}';
+    }
+}

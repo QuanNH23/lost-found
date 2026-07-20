@@ -233,7 +233,8 @@
                                         </c:if>
                                         <c:if test="${empty firstImg}">
                                             <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
-                                                <div class="lf-item-card__thumb-placeholder">📦</div>
+                                                <c:set var="demoIdx" value="${(it.itemId % 4) + 1}"/>
+                                                <img src="${pageContext.request.contextPath}/uploads/demo/demo_${demoIdx}.png" class="lf-item-card__thumb" alt="Ảnh đồ vật demo">
                                             </a>
                                         </c:if>
                                         
@@ -286,7 +287,8 @@
                                         </c:if>
                                         <c:if test="${empty firstImg}">
                                             <a href="${pageContext.request.contextPath}/item_detail?id=${it.itemId}" style="display:block; text-decoration:none;">
-                                                <div class="lf-item-card__thumb-placeholder">🟢</div>
+                                                <c:set var="demoIdx" value="${(it.itemId % 4) + 1}"/>
+                                                <img src="${pageContext.request.contextPath}/uploads/demo/demo_${demoIdx}.png" class="lf-item-card__thumb" alt="Ảnh đồ vật demo">
                                             </a>
                                         </c:if>
                                         

@@ -28,7 +28,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -62,8 +62,8 @@ public class ItemDAO extends DBContext {
         String status = (item.getStatus() != null && !item.getStatus().trim().isEmpty()) ? item.getStatus() : "active";
         
         String sql = "INSERT INTO Items "
-                + "(user_id, category_id, location_id, title, description, type, status, date_incident, images_json) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "(user_id, category_id, location_id, title, description, type, status, date_incident, images_json, location_details) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, item.getUserId());
@@ -81,6 +81,12 @@ public class ItemDAO extends DBContext {
                 ps.setString(9, item.getImagesJSON().trim());
             }
 
+            if (item.getLocationDetails() == null || item.getLocationDetails().trim().isEmpty()) {
+                ps.setNull(10, Types.NVARCHAR);
+            } else {
+                ps.setString(10, item.getLocationDetails().trim());
+            }
+
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -96,7 +102,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -126,7 +132,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -155,7 +161,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -186,7 +192,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -219,7 +225,7 @@ public class ItemDAO extends DBContext {
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, ")
-                .append("i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, ")
+                .append("i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, ")
                 .append("c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name ")
                 .append("FROM Items i ")
                 .append("INNER JOIN Categories c ON i.category_id = c.category_id ")
@@ -291,7 +297,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "UPDATE Items SET category_id = ?, location_id = ?, title = ?, description = ?, "
-                + "date_incident = ?, images_json = ?, updated_at = GETDATE() "
+                + "date_incident = ?, images_json = ?, location_details = ?, updated_at = GETDATE() "
                 + "WHERE item_id = ? AND user_id = ?";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -307,8 +313,14 @@ public class ItemDAO extends DBContext {
                 ps.setString(6, item.getImagesJSON().trim());
             }
 
-            ps.setInt(7, item.getItemId());
-            ps.setInt(8, item.getUserId());
+            if (item.getLocationDetails() == null || item.getLocationDetails().trim().isEmpty()) {
+                ps.setNull(7, Types.NVARCHAR);
+            } else {
+                ps.setString(7, item.getLocationDetails().trim());
+            }
+
+            ps.setInt(8, item.getItemId());
+            ps.setInt(9, item.getUserId());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -453,6 +465,7 @@ public class ItemDAO extends DBContext {
         item.setImagesJSON(rs.getString("images_json"));
         item.setCreatedAt(rs.getTimestamp("created_at"));
         item.setUpdatedAt(rs.getTimestamp("updated_at"));
+        item.setLocationDetails(rs.getString("location_details"));
         return item;
     }
 
@@ -465,7 +478,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -496,7 +509,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -527,7 +540,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT TOP (?) i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -560,7 +573,7 @@ public class ItemDAO extends DBContext {
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, ")
-                .append("i.type, i.status, i.date_incident, i.images_json, i.created_at, i.updated_at, ")
+                .append("i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, ")
                 .append("c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name ")
                 .append("FROM Items i ")
                 .append("INNER JOIN Categories c ON i.category_id = c.category_id ")

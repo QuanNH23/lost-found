@@ -102,6 +102,12 @@
                 </div>
 
                 <div class="lf-form-group">
+                    <label class="lf-label" for="location_details">Địa Điểm Rơi/Thất Lạc/ Nhận Được :</label>
+                    <input type="text" id="location_details" name="location_details" class="lf-input"
+                           value="${oldLocationDetails}" placeholder="Nhập chi tiết địa điểm cụ thể (Vd: Bàn số 3, tầng 1...)">
+                </div>
+
+                <div class="lf-form-group">
                     <label class="lf-label" for="date_incident">
                         ${empty dateLabel ? 'Thời điểm xảy ra' : dateLabel} <span class="req">*</span>
                     </label>

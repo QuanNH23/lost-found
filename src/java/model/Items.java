@@ -19,11 +19,12 @@ public class Items {
     private Date dateIncident;
     private Date createdAt;
     private Date updatedAt;
+    private String locationDetails;
 
     public Items() {
     }
 
-    public Items(int itemId, int userId, int categoryId, int locationId, String title, String description, String type, String status, String imagesJSON, Date dateIncident, Date createdAt, Date updatedAt) {
+    public Items(int itemId, int userId, int categoryId, int locationId, String title, String description, String type, String status, String imagesJSON, Date dateIncident, Date createdAt, Date updatedAt, String locationDetails) {
         this.itemId = itemId;
         this.userId = userId;
         this.categoryId = categoryId;
@@ -36,6 +37,7 @@ public class Items {
         this.dateIncident = dateIncident;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.locationDetails = locationDetails;
     }
 
     public int getItemId() {
@@ -158,6 +160,14 @@ public class Items {
         this.updatedAt = updatedAt;
     }
 
+    public String getLocationDetails() {
+        return locationDetails;
+    }
+
+    public void setLocationDetails(String locationDetails) {
+        this.locationDetails = locationDetails;
+    }
+
     public String getFriendlyTime() {
         if (createdAt == null) return "Mới đăng";
         
@@ -192,8 +202,6 @@ public class Items {
 
     @Override
     public String toString() {
-        return "Items{" + "itemId=" + itemId + ", userId=" + userId + ", categoryId=" + categoryId + ", locationId=" + locationId + ", title=" + title + ", description=" + description + ", type=" + type + ", status=" + status + ", imagesJSON=" + imagesJSON + ", dateIncident=" + dateIncident + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
+        return "Items{" + "itemId=" + itemId + ", userId=" + userId + ", categoryId=" + categoryId + ", locationId=" + locationId + ", title=" + title + ", description=" + description + ", type=" + type + ", status=" + status + ", imagesJSON=" + imagesJSON + ", dateIncident=" + dateIncident + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", locationDetails=" + locationDetails + '}';
     }
-
-   
 }

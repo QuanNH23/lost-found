@@ -126,14 +126,6 @@ public class editItemController extends HttpServlet {
     }
 
     private String buildImagesJson(HttpServletRequest request) throws IOException, ServletException {
-        String uploadRealPath = getServletContext().getRealPath("/" + UPLOAD_FOLDER);
-        if (uploadRealPath == null) {
-            throw new ServletException("Khong xac dinh duoc thu muc uploads tren server.");
-        }
-
-        Path uploadDir = Paths.get(uploadRealPath);
-        Files.createDirectories(uploadDir);
-
         StringBuilder json = new StringBuilder("[");
         boolean hasImage = false;
 
@@ -153,12 +145,9 @@ public class editItemController extends HttpServlet {
             }
 
             String extension = resolveExtension(part.getSubmittedFileName(), contentType);
-            String savedName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().replace("-", "") + extension;
-            Path targetPath = uploadDir.resolve(savedName);
+            String savedName = System.currentTimeMillis() + "_" + java.util.UUID.randomUUID().toString().replace("-", "") + extension;
 
-            try (InputStream in = part.getInputStream()) {
-                Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
-            }
+            util.FileUtil.saveUploadedFile(part, savedName, getServletContext(), UPLOAD_FOLDER);
 
             String relativePath = UPLOAD_FOLDER + "/" + savedName;
             if (hasImage) {
@@ -212,19 +201,11 @@ public class editItemController extends HttpServlet {
     }
 
     private void deleteImageFiles(List<String> relativePaths) {
-        String appRoot = getServletContext().getRealPath("/");
-        if (appRoot == null || relativePaths == null) {
+        if (relativePaths == null) {
             return;
         }
-
-        Path root = Paths.get(appRoot);
         for (String relPath : relativePaths) {
-            try {
-                Path filePath = root.resolve(relPath.replace("/", "\\")).normalize();
-                Files.deleteIfExists(filePath);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            util.FileUtil.deleteFile(relPath, getServletContext());
         }
     }
 
@@ -244,6 +225,7 @@ public class editItemController extends HttpServlet {
         request.setAttribute("oldPhone", customPhone);
         request.setAttribute("oldCategoryId", item.getCategoryId());
         request.setAttribute("oldLocationId", item.getLocationId());
+        request.setAttribute("oldLocationDetails", item.getLocationDetails());
         if (item.getDateIncident() != null) {
             String dateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(item.getDateIncident());
             request.setAttribute("oldDateIncident", dateTime);
@@ -327,6 +309,7 @@ public class editItemController extends HttpServlet {
         String phone = currentUser.getPhoneNumber();
         String categoryIdRaw = request.getParameter("category_id");
         String locationIdRaw = request.getParameter("location_id");
+        String locationDetails = request.getParameter("location_details");
         String dateIncidentRaw = request.getParameter("date_incident");
 
         request.setAttribute("oldTitle", title);
@@ -334,6 +317,7 @@ public class editItemController extends HttpServlet {
         request.setAttribute("oldPhone", phone);
         request.setAttribute("oldCategoryId", categoryIdRaw);
         request.setAttribute("oldLocationId", locationIdRaw);
+        request.setAttribute("oldLocationDetails", locationDetails);
         request.setAttribute("oldDateIncident", dateIncidentRaw);
         request.setAttribute("existingImagePaths", parseImagePaths(existingItem.getImagesJSON()));
         request.setAttribute("itemId", existingItem.getItemId());
@@ -375,6 +359,7 @@ public class editItemController extends HttpServlet {
             updatedItem.setDescription(fullDescription);
             updatedItem.setDateIncident(java.sql.Timestamp.valueOf(dateIncident));
             updatedItem.setImagesJSON(finalImagesJson);
+            updatedItem.setLocationDetails(locationDetails);
 
             // Recheck content filter on update
             String violation = util.ContentFilter.scan(updatedItem.getTitle(), updatedItem.getDescription());

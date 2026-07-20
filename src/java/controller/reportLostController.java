@@ -146,14 +146,6 @@ public class reportLostController extends HttpServlet {
     }
 
     private String buildImagesJson(HttpServletRequest request) throws IOException, ServletException {
-        String uploadRealPath = getServletContext().getRealPath("/" + UPLOAD_FOLDER);
-        if (uploadRealPath == null) {
-            throw new ServletException("Khong xac dinh duoc thu muc uploads tren server.");
-        }
-
-        Path uploadDir = Paths.get(uploadRealPath);
-        Files.createDirectories(uploadDir);
-
         StringBuilder json = new StringBuilder("[");
         boolean hasImage = false;
 
@@ -173,12 +165,9 @@ public class reportLostController extends HttpServlet {
             }
 
             String extension = resolveExtension(part.getSubmittedFileName(), contentType);
-            String savedName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().replace("-", "") + extension;
-            Path targetPath = uploadDir.resolve(savedName);
+            String savedName = System.currentTimeMillis() + "_" + java.util.UUID.randomUUID().toString().replace("-", "") + extension;
 
-            try (InputStream in = part.getInputStream()) {
-                Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
-            }
+            util.FileUtil.saveUploadedFile(part, savedName, getServletContext(), UPLOAD_FOLDER);
 
             String relativePath = UPLOAD_FOLDER + "/" + savedName;
 
@@ -239,6 +228,7 @@ public class reportLostController extends HttpServlet {
         String phone = currentUser.getPhoneNumber();
         String categoryIdRaw = request.getParameter("category_id");
         String locationIdRaw = request.getParameter("location_id");
+        String locationDetails = request.getParameter("location_details");
         String dateIncidentRaw = request.getParameter("date_incident");
 
         request.setAttribute("oldTitle", title);
@@ -246,6 +236,7 @@ public class reportLostController extends HttpServlet {
         request.setAttribute("oldPhone", phone);
         request.setAttribute("oldCategoryId", categoryIdRaw);
         request.setAttribute("oldLocationId", locationIdRaw);
+        request.setAttribute("oldLocationDetails", locationDetails);
         request.setAttribute("oldDateIncident", dateIncidentRaw);
         request.setAttribute("reportType", reportType);
 
@@ -286,6 +277,7 @@ public class reportLostController extends HttpServlet {
             item.setDescription(fullDescription);
             item.setDateIncident(java.sql.Timestamp.valueOf(dateIncident));
             item.setImagesJSON(imagesJson);
+            item.setLocationDetails(locationDetails);
 
             // Bot scan for bad words / blacklisted phone
             String violation = util.ContentFilter.scan(item.getTitle(), item.getDescription());
