@@ -20,6 +20,7 @@ public class Items {
     private Date createdAt;
     private Date updatedAt;
     private String locationDetails;
+    private int viewCount;
 
     public Items() {
     }
@@ -198,6 +199,14 @@ public class Items {
                 return new java.text.SimpleDateFormat("d 'thg' M, yyyy").format(createdAt);
             }
         }
+    }
+
+    public int getViewCount() {
+        return viewCount;
+    }
+
+    public void setViewCount(int viewCount) {
+        this.viewCount = viewCount;
     }
 
     @Override

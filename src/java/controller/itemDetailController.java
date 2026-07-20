@@ -175,6 +175,7 @@ public class itemDetailController extends HttpServlet {
         Users currentUser = (session != null) ? (Users) session.getAttribute("currentUser") : null;
         try {
             int itemId = Integer.parseInt(request.getParameter("id"));
+            new dal.ItemDAO().incrementViewCount(itemId);
             forwardDetail(itemId, request, response, currentUser);
         } catch (Exception e) {
             response.sendRedirect("home");

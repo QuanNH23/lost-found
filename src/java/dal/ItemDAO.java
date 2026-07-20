@@ -132,7 +132,7 @@ public class ItemDAO extends DBContext {
         }
 
         String sql = "SELECT i.item_id, i.user_id, i.category_id, i.location_id, i.title, i.description, "
-                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, "
+                + "i.type, i.status, i.date_incident, i.images_json, i.location_details, i.created_at, i.updated_at, i.view_count, "
                 + "c.name AS category_name, l.name AS location_name, u.full_name AS owner_full_name "
                 + "FROM Items i "
                 + "INNER JOIN Categories c ON i.category_id = c.category_id "
@@ -153,6 +153,19 @@ public class ItemDAO extends DBContext {
         }
 
         return null;
+    }
+
+    public void incrementViewCount(int itemId) {
+        if (connection == null) {
+            return;
+        }
+        String sql = "UPDATE Items SET view_count = view_count + 1 WHERE item_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, itemId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Items getItemByIdAndUser(int itemId, int userId) {
@@ -466,6 +479,11 @@ public class ItemDAO extends DBContext {
         item.setCreatedAt(rs.getTimestamp("created_at"));
         item.setUpdatedAt(rs.getTimestamp("updated_at"));
         item.setLocationDetails(rs.getString("location_details"));
+        try {
+            item.setViewCount(rs.getInt("view_count"));
+        } catch (SQLException e) {
+            // Ignore if column is not in select list
+        }
         return item;
     }
 

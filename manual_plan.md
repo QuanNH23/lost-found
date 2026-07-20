@@ -90,30 +90,45 @@ lost-found/
 
 ### 2.1. Luồng tổng quát của một Request
 
-```mermaid
-sequenceDiagram
-    participant Browser
-    participant Filter as AuthorizationFilter
-    participant Servlet as Controller (Servlet)
-    participant DAO as DAO Layer
-    participant DB as SQL Server DB
-    participant JSP as JSP View
-
-    Browser->>Filter: HTTP Request (GET/POST)
-    Filter->>Filter: Kiểm tra Session, phân quyền
-    Filter->>Servlet: chain.doFilter()
-    Servlet->>DAO: Gọi DAO methods
-    DAO->>DB: Thực thi SQL (PreparedStatement)
-    DB-->>DAO: ResultSet
-    DAO-->>Servlet: Java Objects (Model)
-    Servlet->>JSP: request.setAttribute() → forward()
-    JSP-->>Browser: HTML Response
+```
+  Browser                                   Server (Tomcat)
+    │                                          │
+    │── HTTP Request (GET/POST) ──────────────▶│
+    │                                          │
+    │                              ┌───────────┴───────────┐
+    │                              │  AuthorizationFilter   │
+    │                              │  - Kiểm tra Session   │
+    │                              │  - Đếm thông báo      │
+    │                              │  - Check phân quyền   │
+    │                              └───────────┬───────────┘
+    │                                          │ chain.doFilter()
+    │                              ┌───────────┴───────────┐
+    │                              │   Controller (Servlet)  │
+    │                              │   - Nhận request      │
+    │                              │   - Thực hiện logic   │
+    │                              └───────────┬───────────┘
+    │                                          │ Gọi DAO methods
+    │                              ┌───────────┴───────────┐
+    │                              │      DAO Layer         │
+    │                              │   PreparedStatement   │
+    │                              └───────────┬───────────┘
+    │                                          │ Thực thi SQL
+    │                              ┌───────────┴───────────┐
+    │                              │   SQL Server Database   │
+    │                              └───────────┬───────────┘
+    │                                          │ ResultSet -> Model
+    │                              ┌───────────┴───────────┐
+    │                              │     JSP View (.jsp)   │
+    │                              │  request.setAttribute │
+    │                              └───────────┬───────────┘
+    │                                          │ forward() / redirect()
+    │◀──────────── HTML Response ──────────────│
 ```
 
 ### 2.2. Chi tiết luồng xử lý từng bước
 
 **Bước 1 – Filter chặn toàn bộ request:**
-- File: [AuthorizationFilter.java](file:///d:/prj301/lost-found/src/java/controller/AuthorizationFilter.java) — Annotation `@WebFilter("/*")` (dòng 17)
+- File: [AuthorizationFilter.java](src/java/controller/AuthorizationFilter.java) — Annotation `@WebFilter("/*")` (dòng 17)
 - Mọi request đều qua Filter trước → Filter kiểm tra:
   - Cho pass tĩnh (assets, uploads) → dòng 35
   - Set unread notification count cho navbar nếu đã login → dòng 41-85
@@ -122,7 +137,7 @@ sequenceDiagram
   - Chặn student truy cập trang admin → dòng 104-111
 
 **Bước 2 – Controller nhận request:**
-- Servlet mapping được khai báo trong [web.xml](file:///d:/prj301/lost-found/web/WEB-INF/web.xml) (dòng 8-116) hoặc bằng `@WebServlet` annotation
+- Servlet mapping được khai báo trong [web.xml](web/WEB-INF/web.xml) (dòng 8-116) hoặc bằng `@WebServlet` annotation
 - Controller xử lý logic trong `doGet()` (hiển thị trang) hoặc `doPost()` (xử lý form submit)
 
 **Bước 3 – Controller gọi DAO:**
@@ -169,7 +184,7 @@ sequenceDiagram
 
 #### 4.1.1. Luồng Login đầy đủ
 
-**File Controller:** [loginController.java](file:///d:/prj301/lost-found/src/java/controller/loginController.java)
+**File Controller:** [loginController.java](src/java/controller/loginController.java)
 
 **`doGet()` (dòng 40-50):** Hiển thị form đăng nhập
 ```java
@@ -207,7 +222,7 @@ else {
 }
 ```
 
-**File DAO:** [UserDAO.java](file:///d:/prj301/lost-found/src/java/dal/UserDAO.java) — method `checkLogin()` (dòng 11-32)
+**File DAO:** [UserDAO.java](src/java/dal/UserDAO.java) — method `checkLogin()` (dòng 11-32)
 ```java
 // Dòng 12-15: Query kiểm tra username + password + is_active = 1 (chưa bị khóa)
 String sql = "SELECT * FROM Users WHERE username = ? AND password = ? AND is_active = 1";
@@ -218,22 +233,22 @@ ps.setString(2, password);
 // Nếu không có → trả về null
 ```
 
-**File View:** [login.jsp](file:///d:/prj301/lost-found/web/WEB-INF/views/login.jsp) — form gửi POST đến `/login`
+**File View:** [login.jsp](web/WEB-INF/views/login.jsp) — form gửi POST đến `/login`
 
 #### 4.1.2. Session được sử dụng ở đâu trong toàn dự án
 
 | Nơi sử dụng | File | Dòng | Mục đích |
 |---|---|---|---|
-| Tạo session | [loginController.java](file:///d:/prj301/lost-found/src/java/controller/loginController.java) | 72-74 | `session.setAttribute("currentUser", loggedInUser)` |
-| Kiểm tra đăng nhập | [AuthorizationFilter.java](file:///d:/prj301/lost-found/src/java/controller/AuthorizationFilter.java) | 41, 96 | `session.getAttribute("currentUser")` |
-| Kiểm tra quyền admin | [AuthorizationFilter.java](file:///d:/prj301/lost-found/src/java/controller/AuthorizationFilter.java) | 46, 101 | `session.getAttribute("userRole")` |
+| Tạo session | [loginController.java](src/java/controller/loginController.java) | 72-74 | `session.setAttribute("currentUser", loggedInUser)` |
+| Kiểm tra đăng nhập | [AuthorizationFilter.java](src/java/controller/AuthorizationFilter.java) | 41, 96 | `session.getAttribute("currentUser")` |
+| Kiểm tra quyền admin | [AuthorizationFilter.java](src/java/controller/AuthorizationFilter.java) | 46, 101 | `session.getAttribute("userRole")` |
 | Lưu flash message | Nhiều controller | — | `session.setAttribute("message", "...")` |
-| Admin notification tracking | [AuthorizationFilter.java](file:///d:/prj301/lost-found/src/java/controller/AuthorizationFilter.java) | 48-76 | `session.setAttribute("adminLastCount_*", count)` |
-| Hủy session (Logout) | [logoutController.java](file:///d:/prj301/lost-found/src/java/controller/logoutController.java) | 59-63 | `session.invalidate()` |
+| Admin notification tracking | [AuthorizationFilter.java](src/java/controller/AuthorizationFilter.java) | 48-76 | `session.setAttribute("adminLastCount_*", count)` |
+| Hủy session (Logout) | [logoutController.java](src/java/controller/logoutController.java) | 59-63 | `session.invalidate()` |
 
 #### 4.1.3. Logout — Hủy Session
 
-**File:** [logoutController.java](file:///d:/prj301/lost-found/src/java/controller/logoutController.java) — `doGet()` (dòng 57-64)
+**File:** [logoutController.java](src/java/controller/logoutController.java) — `doGet()` (dòng 57-64)
 ```java
 HttpSession session = request.getSession(false);
 if (session != null) {
@@ -241,6 +256,15 @@ if (session != null) {
 }
 response.sendRedirect(request.getContextPath() + "/home"); // Redirect về trang chủ
 ```
+
+🎙️ **Kịch bản nói khi bảo vệ (Session):**
+"Dạ thưa thầy/cô, về chức năng Đăng nhập và quản lý phiên làm việc bằng **Session**, em đã thiết kế luồng xử lý như sau:
+* **Bước 1 — Nhận thông tin đăng nhập:** Khi người dùng điền thông tin đăng nhập vào form ở file giao diện `login.jsp` và nhấn nút Đăng nhập, trình duyệt sẽ gửi một request dạng `POST` tới Servlet `loginController.java`. Tại đây, em dùng lệnh `request.getParameter("username")` và `request.getParameter("password")` để nhận dữ liệu thô từ form gửi lên.
+* **Bước 2 — Xác thực dữ liệu:** Servlet sẽ gọi tiếp phương thức `checkLogin(username, password)` từ lớp `UserDAO`. DAO này thực hiện truy vấn xuống cơ sở dữ liệu SQL Server bằng cơ chế `PreparedStatement` để so khớp tài khoản mật khẩu, đồng thời kiểm tra xem tài khoản đó có đang bị khóa hay không qua cột trạng thái `is_active = 1`.
+* **Bước 3 — Khởi tạo Session làm 'thẻ thông hành':** Nếu thông tin đăng nhập đúng, Servlet sẽ trả về đối tượng `Users`. Lúc này, em gọi câu lệnh `request.getSession()` để máy chủ Tomcat tạo ra một phiên làm việc (Session) mới dành riêng cho người dùng này. Sau đó, em dùng câu lệnh `session.setAttribute("currentUser", loggedInUser)` để cất toàn bộ đối tượng người dùng vào Session đó, và lưu vai trò của họ bằng `session.setAttribute("userRole", role)` để dùng cho việc phân quyền sau này. Cuối cùng, em dùng `response.sendRedirect("home")` để đưa người dùng về trang chủ.
+* **Bước 4 — Kiểm tra thẻ thông hành ở các trang sau:** Kể từ lúc này, mỗi khi người dùng truy cập bất kỳ trang nào yêu cầu đăng nhập, bộ lọc `AuthorizationFilter.java` sẽ hoạt động. Bộ lọc này dùng lệnh `session.getAttribute("currentUser")` để kiểm tra. Nếu kết quả trả về là `null` (tức là chưa đăng nhập hoặc Session đã hết hạn), hệ thống lập tức chặn lại và dùng lệnh `response.sendRedirect("login")` để bắt người dùng quay lại trang đăng nhập.
+* **Bước 5 — Hủy bỏ thẻ thông hành khi Đăng xuất:** Khi người dùng nhấn nút Đăng xuất, hệ thống gọi Servlet `logoutController.java`. Em dùng câu lệnh `session.invalidate()` để xóa bỏ hoàn toàn dữ liệu của Session này trên máy chủ, đảm bảo thông tin đăng nhập bị hủy bỏ."
+
 
 ---
 
@@ -263,13 +287,17 @@ Dự án Lost & Found **không có chức năng giỏ hàng** và **không sử 
 | Thời gian sống | Hết khi đóng trình duyệt hoặc timeout | Tùy chỉnh `maxAge` |
 | Ứng dụng | Lưu thông tin đăng nhập, quyền truy cập | Remember me, preferences |
 
+🎙️ **Kịch bản nói khi bảo vệ (Cookies):**
+"Dạ thưa thầy/cô, dự án của em là hệ thống tìm kiếm đồ thất lạc cộng đồng chứ không phải web bán hàng thương mại điện tử, do đó hệ thống không có chức năng giỏ hàng và không dùng Cookie để lưu thông tin nghiệp vụ. Mọi thông tin nhạy cảm của người dùng đều được lưu an toàn trên máy chủ thông qua Session. Cookie duy nhất xuất hiện trên trình duyệt là `JSESSIONID` do Tomcat tự sinh ra để ánh xạ trình duyệt với session tương ứng trên máy chủ."
+
+
 ---
 
 ### 4.3. MODULE COMMENT & REPLY COMMENT
 
 #### 4.3.1. Xem bình luận (doGet)
 
-**File Controller:** [itemDetailController.java](file:///d:/prj301/lost-found/src/java/controller/itemDetailController.java)
+**File Controller:** [itemDetailController.java](src/java/controller/itemDetailController.java)
 
 **`doGet()` (dòng 172-182):** Lấy tất cả comments của bài viết
 ```java
@@ -362,7 +390,7 @@ if (parentId != null) {
 }
 ```
 
-**File DAO:** [MessageDAO.java](file:///d:/prj301/lost-found/src/java/dal/MessageDAO.java)
+**File DAO:** [MessageDAO.java](src/java/dal/MessageDAO.java)
 
 - `insertComment()` (dòng 167-185):
 ```java
@@ -378,7 +406,11 @@ String sql = "INSERT INTO Message (user_id, sender_id, title, message, is_read, 
 // user_id = người NHẬN thông báo, sender_id = người GỬI reply
 ```
 
-**File View:** [item_detail.jsp](file:///d:/prj301/lost-found/web/WEB-INF/views/item_detail.jsp) — Render cây bình luận bằng `<c:forEach>` lồng nhau (recursive via JSTL)
+**File View:** [item_detail.jsp](web/WEB-INF/views/item_detail.jsp) — Render cây bình luận bằng `<c:forEach>` lồng nhau (recursive via JSTL)
+
+🎙️ **Kịch bản nói khi bảo vệ (Comment/Reply):**
+"Dạ thưa thầy/cô, hệ thống bình luận của em hoạt động theo cấu trúc cây phân cấp (cha - con) tương tự như Facebook. Khi người dùng gửi bình luận, nếu là bình luận mới thì `parentId` sẽ bằng `null`, còn nếu là phản hồi (reply) cho một bình luận khác thì `parentId` sẽ lưu `messageId` của bình luận cha. Khi load trang chi tiết, tại Servlet `itemDetailController`, em thực hiện một thuật toán duyệt 2 lần thông qua cấu trúc dữ liệu `Map` để nhóm các bình luận con vào bình luận cha tương ứng của nó. Sau đó, em chuyển cây bình luận hoàn chỉnh sang file JSP để hiển thị bằng JSTL. Khi có bình luận con (reply) mới được thêm vào, Servlet cũng kiểm tra và tự động gửi một thông báo phản hồi (Reply Notification) đến hòm thư của người sở hữu bình luận cha."
+
 
 ---
 
@@ -386,7 +418,7 @@ String sql = "INSERT INTO Message (user_id, sender_id, title, message, is_read, 
 
 #### 4.4.1. Đếm thông báo chưa đọc
 
-**File:** [AuthorizationFilter.java](file:///d:/prj301/lost-found/src/java/controller/AuthorizationFilter.java)
+**File:** [AuthorizationFilter.java](src/java/controller/AuthorizationFilter.java)
 
 Filter chạy trên **MỌI request** → đảm bảo navbar luôn hiển thị số thông báo chính xác:
 
@@ -407,7 +439,7 @@ if (lastCount == null || lastCount != currentCount) {
 }
 ```
 
-**File DAO:** [MessageDAO.java](file:///d:/prj301/lost-found/src/java/dal/MessageDAO.java) — `countUnreadInbox()` (dòng 261-278):
+**File DAO:** [MessageDAO.java](src/java/dal/MessageDAO.java) — `countUnreadInbox()` (dòng 261-278):
 ```java
 // Đếm message có is_read = 0 thuộc các loại: Comment (trên bài của mình), Reply, System, Account, Support_*
 String sql = "SELECT COUNT(m.message_id) FROM Message m LEFT JOIN Items i ON m.related_item_id = i.item_id "
@@ -418,9 +450,9 @@ String sql = "SELECT COUNT(m.message_id) FROM Message m LEFT JOIN Items i ON m.r
 
 #### 4.4.2. Đánh dấu đã đọc
 
-- **Đọc từng tin:** [MarkNotificationReadController.java](file:///d:/prj301/lost-found/src/java/controller/MarkNotificationReadController.java) → gọi `msgDao.markMessageAsReadById(messageId)`
-- **Đọc tất cả:** [MarkAllNotificationsReadController.java](file:///d:/prj301/lost-found/src/java/controller/MarkAllNotificationsReadController.java) → gọi `msgDao.markAllInboxMessagesAsRead(userId)`
-- **Tự động đọc khi vào trang chi tiết:** [itemDetailController.java](file:///d:/prj301/lost-found/src/java/controller/itemDetailController.java) dòng 91: `messageDAO.markMessagesAsRead(itemId, currentUser.getUserId())`
+- **Đọc từng tin:** [MarkNotificationReadController.java](src/java/controller/MarkNotificationReadController.java) → gọi `msgDao.markMessageAsReadById(messageId)`
+- **Đọc tất cả:** [MarkAllNotificationsReadController.java](src/java/controller/MarkAllNotificationsReadController.java) → gọi `msgDao.markAllInboxMessagesAsRead(userId)`
+- **Tự động đọc khi vào trang chi tiết:** [itemDetailController.java](src/java/controller/itemDetailController.java) dòng 91: `messageDAO.markMessagesAsRead(itemId, currentUser.getUserId())`
 
 #### 4.4.3. Các loại thông báo
 
@@ -434,13 +466,17 @@ String sql = "SELECT COUNT(m.message_id) FROM Message m LEFT JOIN Items i ON m.r
 | `Support_Rejected` | Yêu cầu hỗ trợ bị từ chối | `AdminSupportController` |
 | `[REPORT] ...` | Báo cáo vi phạm (chỉ admin thấy) | `ReportController.doPost()` |
 
+🎙️ **Kịch bản nói khi bảo vệ (Notification):**
+"Dạ thưa thầy/cô, hệ thống thông báo hoạt động thời gian thực trên mỗi lượt tải trang nhờ vào `AuthorizationFilter`. Với mỗi request từ người dùng, Filter sẽ chặn lại và gọi DAO kiểm tra số lượng thông báo có cột `is_read = 0` (chưa đọc) trong bảng `Message`. Em lọc chi tiết các loại như thông báo có người comment bài của mình, có người trả lời bình luận của mình, hoặc thông báo hệ thống rồi gán số lượng đó vào thuộc tính `unreadInboxCount` để thanh điều hướng hiển thị đúng số chuông đỏ báo tin mới. Khi người dùng click xem chi tiết bài đăng hoặc hòm thư, hệ thống sẽ thực hiện cập nhật `is_read = 1` xuống DB để trừ đi số lượng thông báo chưa đọc tương ứng."
+
+
 ---
 
 ### 4.5. MODULE UPLOAD & QUẢN LÝ HÌNH ẢNH
 
 #### 4.5.1. Upload ảnh bài đăng
 
-**File Controller:** [reportLostController.java](file:///d:/prj301/lost-found/src/java/controller/reportLostController.java)
+**File Controller:** [reportLostController.java](src/java/controller/reportLostController.java)
 
 Annotation `@MultipartConfig` (dòng 24-28):
 ```java
@@ -477,7 +513,7 @@ for (Part part : request.getParts()) {
 
 #### 4.5.2. Lưu ảnh bền vững (Dual-Write)
 
-**File:** [FileUtil.java](file:///d:/prj301/lost-found/src/java/util/FileUtil.java) — `saveUploadedFile()` (dòng 14-41)
+**File:** [FileUtil.java](src/java/util/FileUtil.java) — `saveUploadedFile()` (dòng 14-41)
 ```java
 // BƯỚC 1 (dòng 16-24): Lưu vào thư mục deploy (build/web/uploads/)
 String deployRoot = context.getRealPath("/");
@@ -495,13 +531,17 @@ Files.copy(part.getInputStream(), sourceFile, REPLACE_EXISTING);
 
 #### 4.5.3. Upload Avatar
 
-**File Controller:** [editProfileController.java](file:///d:/prj301/lost-found/src/java/controller/editProfileController.java) — tương tự `reportLostController`, dùng `FileUtil.saveUploadedFile()` lưu vào `uploads/avatars/`, rồi cập nhật `avatar_url` trong bảng Users.
+**File Controller:** [editProfileController.java](src/java/controller/editProfileController.java) — tương tự `reportLostController`, dùng `FileUtil.saveUploadedFile()` lưu vào `uploads/avatars/`, rồi cập nhật `avatar_url` trong bảng Users.
+
+🎙️ **Kịch bản nói khi bảo vệ (Image Upload & Dual-Write):**
+"Dạ thưa thầy/cô, để hỗ trợ đăng tải hình ảnh chứng minh đồ thất lạc, em dùng chú thích `@MultipartConfig` tại các Servlet để cho phép nhận luồng dữ liệu file (Part). Để giải quyết bài toán dữ liệu bị mất mỗi khi Clean & Build dự án trên NetBeans (do NetBeans sẽ xóa sạch thư mục deploy `build/` của Tomcat), em đã thiết kế một giải pháp ghi kép (Dual-Write) trong lớp `FileUtil`. Khi lưu ảnh, hệ thống sẽ ghi đồng thời 2 bản sao: một bản ghi vào thư mục chạy thực tế `build/web/uploads` để người dùng xem được ngay, và bản sao thứ hai ghi vào thư mục nguồn của mã nguồn `web/uploads`. Khi dự án build lại, Tomcat sẽ đồng bộ bản ghi này từ thư mục nguồn nên ảnh tải lên không bao giờ bị mất."
+
 
 ---
 
 ### 4.6. MODULE ĐĂNG TIN MẤT ĐỒ / NHẶT ĐƯỢC
 
-**File Controller:** [reportLostController.java](file:///d:/prj301/lost-found/src/java/controller/reportLostController.java)
+**File Controller:** [reportLostController.java](src/java/controller/reportLostController.java)
 
 **`doGet()` (dòng 186-200):** Hiển thị form đăng tin
 ```java
@@ -540,11 +580,15 @@ boolean inserted = dao.insertItemByType(item, reportType);
 - `/report_lost` → type = "lost" (web.xml dòng 94-96)
 - `/report_found` → type = "found" (web.xml dòng 97-100)
 
+🎙️ **Kịch bản nói khi bảo vệ (Đăng tin):**
+"Dạ thưa thầy/cô, về chức năng Đăng tin báo Mất đồ / Nhặt được đồ, em sử dụng chung một controller là `reportLostController.java` cho cả hai tác vụ. Khi người dùng truy cập `/report_lost` hoặc `/report_found`, Servlet sẽ tự động phân tích URL bằng lệnh `request.getServletPath()` để xác định loại tin đăng và cấu hình động các nhãn tiêu đề form phù hợp trước khi forward sang `report_lost.jsp`. Khi người dùng submit form, Servlet sẽ thực hiện validate dữ liệu bắt buộc, xử lý upload file ảnh và gọi `ContentFilter` để kiểm tra từ cấm. Nếu nội dung hợp lệ, Servlet gọi `dao.insertItemByType(item, reportType)` để lưu vào DB và redirect người dùng về trang tin cá nhân để quản lý."
+
+
 ---
 
 ### 4.7. MODULE BÁO CÁO VI PHẠM (Report)
 
-**File Controller:** [ReportController.java](file:///d:/prj301/lost-found/src/java/controller/ReportController.java) — `@WebServlet("/report_item")`
+**File Controller:** [ReportController.java](src/java/controller/ReportController.java) — `@WebServlet("/report_item")`
 
 **`doPost()` (dòng 21-101):**
 ```java
@@ -568,15 +612,19 @@ if (totalOwnerReports >= 3) {
 }
 ```
 
-**File Admin:** [AdminModerationController.java](file:///d:/prj301/lost-found/src/java/controller/AdminModerationController.java) — `@WebServlet("/admin/moderation")`
+**File Admin:** [AdminModerationController.java](src/java/controller/AdminModerationController.java) — `@WebServlet("/admin/moderation")`
 - `doGet()`: Lấy danh sách bài bị ẩn (`status = 'processing'`) + bài bị báo cáo (còn `status = 'active'`)
 - `doPost()`: Admin có 3 hành động: **Giữ lại bài** (approve), **Xóa bài** (delete), **Blacklist SĐT** (blacklist)
+
+🎙️ **Kịch bản nói khi bảo vệ (Báo cáo vi phạm):**
+"Dạ thưa thầy/cô, để bảo vệ cộng đồng khỏi các tin đăng spam hoặc lừa đảo, em thiết kế chức năng Báo cáo vi phạm. Khi người dùng click nút báo cáo một bài viết cụ thể, hệ thống sẽ gửi request đến `ReportController`. Đầu tiên hệ thống kiểm tra để tránh trùng lặp báo cáo từ một tài khoản. Sau đó, nó lưu một bản ghi báo cáo vào bảng `Message` với tiêu đề bắt đầu là `[REPORT]`. Để tăng tính tự động hóa, nếu bài viết nhận đủ 3 báo cáo từ các tài khoản khác nhau, hệ thống sẽ tự động đổi trạng thái bài viết thành ẩn (`processing`) và đẩy vào hàng kiểm duyệt của Admin. Đặc biệt, nếu một chủ tài khoản có tổng số lượng bài viết bị báo cáo đạt từ 3 trở lên, hệ thống sẽ tự động khóa tài khoản của họ (`is_active = false`) và gửi thông báo cảnh cáo tự động vào hòm thư cá nhân của họ."
+
 
 ---
 
 ### 4.8. MODULE BỘ LỌC NỘI DUNG TỰ ĐỘNG (Content Filter Bot)
 
-**File:** [ContentFilter.java](file:///d:/prj301/lost-found/src/java/util/ContentFilter.java)
+**File:** [ContentFilter.java](src/java/util/ContentFilter.java)
 
 ```java
 // Dòng 41-61: Method scan() — quét tiêu đề + mô tả bài viết
@@ -601,15 +649,19 @@ public static String scan(String title, String description) {
 ```
 
 **Dữ liệu lọc được lưu trữ trong file text:**
-- [badwords.txt](file:///d:/prj301/lost-found/src/java/badwords.txt) — Danh sách từ cấm
-- [blacklist_phones.txt](file:///d:/prj301/lost-found/src/java/blacklist_phones.txt) — Danh sách SĐT bị chặn
-- Admin có thể thêm/xóa qua giao diện tại trang [blacklist.jsp](file:///d:/prj301/lost-found/web/WEB-INF/views/admin/blacklist.jsp)
+- [badwords.txt](src/java/badwords.txt) — Danh sách từ cấm
+- [blacklist_phones.txt](src/java/blacklist_phones.txt) — Danh sách SĐT bị chặn
+- Admin có thể thêm/xóa qua giao diện tại trang [blacklist.jsp](web/WEB-INF/views/admin/blacklist.jsp)
+
+🎙️ **Kịch bản nói khi bảo vệ (Bộ lọc nội dung tự động):**
+"Dạ thưa thầy/cô, để kiểm duyệt chất lượng nội dung tự động trước khi hiển thị ra cộng đồng, em xây dựng lớp `ContentFilter`. Khi người dùng đăng tin mới hoặc chỉnh sửa tin, hệ thống sẽ tự động quét qua tiêu đề và mô tả. Lớp này sẽ đối chiếu nội dung với danh sách từ ngữ thô tục (`badwords.txt`) và danh sách số điện thoại lừa đảo (`blacklist_phones.txt`). Nếu phát hiện vi phạm, bài viết sẽ tự động chuyển sang trạng thái ẩn (`processing`) để chờ admin duyệt thủ công. Nếu nội dung sạch, tin đăng sẽ hiển thị trực tiếp (`active`). Admin cũng có thể quản lý danh sách từ cấm này trực tiếp trên trang quản trị."
+
 
 ---
 
 ### 4.9. MODULE KẾT NỐI CSDL (Database)
 
-**File:** [DBContext.java](file:///d:/prj301/lost-found/src/java/dal/DBContext.java) (dòng 21-42)
+**File:** [DBContext.java](src/java/dal/DBContext.java) (dòng 21-42)
 ```java
 public class DBContext {
     protected Connection connection;
@@ -629,7 +681,7 @@ public class DBContext {
 }
 ```
 
-**File cấu hình:** [ConnectDB.properties](file:///d:/prj301/lost-found/src/java/ConnectDB.properties)
+**File cấu hình:** [ConnectDB.properties](src/java/ConnectDB.properties)
 ```properties
 url=jdbc:sqlserver://localhost:1433;databaseName=Project_PRJ301_DB;trustServerCertificate=true
 userID=sa
@@ -644,11 +696,15 @@ public class MessageDAO extends DBContext { ... }
 // → Khi new UserDAO() → constructor DBContext() tự động tạo connection
 ```
 
+🎙️ **Kịch bản nói khi bảo vệ (Kết nối CSDL):**
+"Dạ thưa thầy/cô, để tối ưu hóa việc quản lý kết nối CSDL, em đã tạo một lớp cơ sở tên là `DBContext`. Lớp này sẽ đọc thông tin cấu hình kết nối từ file `ConnectDB.properties` nằm trong classpath (bao gồm URL kết nối, tên đăng nhập `sa` và mật khẩu). Việc tách cấu hình này giúp bảo mật thông tin tài khoản và dễ dàng thay đổi địa chỉ database khi triển khai thực tế. Tất cả các lớp DAO khác như `UserDAO`, `ItemDAO` đều kế thừa lớp `DBContext` này. Nhờ vậy, ngay khi ta khởi tạo bất kỳ đối tượng DAO nào, kết nối CSDL cũng đã được thiết lập sẵn sàng để thực thi các câu lệnh truy vấn một cách nhanh chóng và an toàn."
+
+
 ---
 
 ### 4.10. PHÂN QUYỀN (Authorization Filter)
 
-**File:** [AuthorizationFilter.java](file:///d:/prj301/lost-found/src/java/controller/AuthorizationFilter.java)
+**File:** [AuthorizationFilter.java](src/java/controller/AuthorizationFilter.java)
 
 **Cơ chế hoạt động (6 bước tuần tự):**
 
@@ -661,33 +717,37 @@ public class MessageDAO extends DBContext { ... }
 | 5 | 104-111 | Chặn student truy cập trang admin (`/manage_*`, `/update*`, `/delete*`, `/add*`, `/admin/*`) |
 | 6 | 114 | Pass cho user đã xác thực |
 
+🎙️ **Kịch bản nói khi bảo vệ (Phân quyền - Filter):**
+"Dạ thưa thầy/cô, để bảo mật toàn diện cho toàn bộ hệ thống mà không cần viết lặp đi lặp lại code kiểm tra đăng nhập ở từng Servlet, em sử dụng bộ lọc `AuthorizationFilter` chặn trên đường dẫn `/*`. Bộ lọc này hoạt động theo cơ chế phân lớp: đầu tiên cho qua các file tài nguyên tĩnh và các trang công cộng như trang chủ, đăng nhập, đăng ký, xem chi tiết bài đăng. Sau đó, nếu đường dẫn yêu cầu quyền hạn (như các trang chỉnh sửa hồ sơ, hòm thư cá nhân), bộ lọc sẽ kiểm tra session người dùng hiện tại. Riêng đối với các trang quản trị của Admin bắt đầu bằng `/admin/` hoặc các chức năng CRUD danh mục/vị trí, bộ lọc sẽ kiểm tra xem thuộc tính vai trò `userRole` trong session có phải là `admin` hay không. Nếu không thỏa mãn bất kỳ điều kiện nào, Filter sẽ tự động chuyển hướng người dùng về trang login hoặc trang chủ để bảo vệ tài nguyên."
+
+
 ---
 
 ### 4.11. YÊU CẦU NHẬN ĐỒ (Claim System)
 
-**File Controller:** [itemDetailController.java](file:///d:/prj301/lost-found/src/java/controller/itemDetailController.java)
+**File Controller:** [itemDetailController.java](src/java/controller/itemDetailController.java)
 
 - `handleRespondClaim()` (dòng 217-241): Chủ bài "found" duyệt/từ chối yêu cầu nhận đồ
 - `handleOwnerRequestLost()` (dòng 243-270): Chủ bài "lost" yêu cầu nhận lại đồ từ người tìm thấy
 - `handleFinderRespondLost()` (dòng 272-302): Người tìm thấy đồng ý/từ chối trả đồ
 
-**File DAO:** [ClaimDAO.java](file:///d:/prj301/lost-found/src/java/dal/ClaimDAO.java) — CRUD bảng Claims
+**File DAO:** [ClaimDAO.java](src/java/dal/ClaimDAO.java) — CRUD bảng Claims
 
 ---
 
 ### 4.12. CUSTOM JSP TAG FILES
 
-**Thư mục:** [/WEB-INF/tags/](file:///d:/prj301/lost-found/web/WEB-INF/tags)
+**Thư mục:** [/WEB-INF/tags/](web/WEB-INF/tags)
 
 | Tag | File | Mô tả |
 |---|---|---|
-| `<lf:navbar>` | [navbar.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/navbar.tag) | Thanh điều hướng + notification bell + responsive menu |
-| `<lf:userMenu>` | [userMenu.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/userMenu.tag) | Dropdown menu user + chuông thông báo + badge |
-| `<lf:footer>` | [footer.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/footer.tag) | Footer trang |
-| `<lf:avatar>` | [avatar.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/avatar.tag) | Hiển thị avatar (có ảnh hoặc chữ cái đầu) |
-| `<lf:statusBadge>` | [statusBadge.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/statusBadge.tag) | Badge trạng thái bài viết |
-| `<lf:typeBadge>` | [typeBadge.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/typeBadge.tag) | Badge loại tin (lost/found) |
-| `<lf:emptyState>` | [emptyState.tag](file:///d:/prj301/lost-found/web/WEB-INF/tags/emptyState.tag) | Hiển thị trạng thái danh sách trống |
+| `<lf:navbar>` | [navbar.tag](web/WEB-INF/tags/navbar.tag) | Thanh điều hướng + notification bell + responsive menu |
+| `<lf:userMenu>` | [userMenu.tag](web/WEB-INF/tags/userMenu.tag) | Dropdown menu user + chuông thông báo + badge |
+| `<lf:footer>` | [footer.tag](web/WEB-INF/tags/footer.tag) | Footer trang |
+| `<lf:avatar>` | [avatar.tag](web/WEB-INF/tags/avatar.tag) | Hiển thị avatar (có ảnh hoặc chữ cái đầu) |
+| `<lf:statusBadge>` | [statusBadge.tag](web/WEB-INF/tags/statusBadge.tag) | Badge trạng thái bài viết |
+| `<lf:typeBadge>` | [typeBadge.tag](web/WEB-INF/tags/typeBadge.tag) | Badge loại tin (lost/found) |
+| `<lf:emptyState>` | [emptyState.tag](web/WEB-INF/tags/emptyState.tag) | Hiển thị trạng thái danh sách trống |
 
 ---
 

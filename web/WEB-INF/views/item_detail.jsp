@@ -350,7 +350,7 @@
                     
                     <!-- Views / Date incident -->
                     <div class="text-sm mt-md" style="color: #64748b;">
-                        👁️ 407 lượt xem • 
+                        👁️ ${itemDetail.viewCount} lượt xem • 
                         <c:choose>
                             <c:when test="${not empty itemDetail.dateIncident}">
                                 <fmt:formatDate value="${itemDetail.dateIncident}" pattern="dd/MM/yyyy"/>

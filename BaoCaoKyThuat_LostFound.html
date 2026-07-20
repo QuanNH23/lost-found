@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Kỹ Thuật - Lost & Found - PRJ301</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:#f8fafc; color:#1e293b; line-height:1.7; padding:30px; }
+  .container { max-width:900px; margin:0 auto; background:white; padding:50px; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+  h1 { font-size:1.8rem; font-weight:800; color:#1e3a8a; text-align:center; margin-bottom:4px; }
+  .subtitle { text-align:center; color:#64748b; font-size:0.95rem; margin-bottom:36px; font-weight:500; }
+  h2 { font-size:1.35rem; font-weight:800; color:#1e3a8a; margin-top:42px; margin-bottom:16px; border-bottom:3px solid #3b82f6; padding-bottom:8px; }
+  h3 { font-size:1.1rem; font-weight:700; color:#1e40af; margin-top:28px; margin-bottom:10px; }
+  h4 { font-size:1rem; font-weight:700; color:#334155; margin-top:20px; margin-bottom:8px; }
+  p, li { font-size:0.92rem; margin-bottom:6px; }
+  ul, ol { margin-left:22px; margin-bottom:14px; }
+  ul li { list-style:disc; }
+  ol li { list-style:decimal; }
+  pre { background:#1e293b; color:#e2e8f0; padding:16px 20px; border-radius:10px; font-size:0.82rem; overflow-x:auto; margin:12px 0 18px; line-height:1.5; font-family:'Cascadia Code','Fira Code',monospace; }
+  code { background:#e2e8f0; color:#be185d; padding:1px 6px; border-radius:4px; font-size:0.85rem; font-family:'Cascadia Code','Fira Code',monospace; }
+  pre code { background:none; color:#e2e8f0; padding:0; }
+  table { width:100%; border-collapse:collapse; margin:14px 0 20px; font-size:0.85rem; }
+  th { background:#1e3a8a; color:white; padding:10px 14px; text-align:left; font-weight:600; }
+  td { padding:8px 14px; border-bottom:1px solid #e2e8f0; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  .note { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #3b82f6; padding:14px 18px; border-radius:8px; margin:14px 0; font-size:0.88rem; color:#1e40af; }
+  .warn { background:#fef3c7; border:1px solid #fde68a; border-left:4px solid #f59e0b; padding:14px 18px; border-radius:8px; margin:14px 0; font-size:0.88rem; color:#92400e; }
+  .diagram-box { background:#f1f5f9; border:2px solid #cbd5e1; border-radius:12px; padding:20px; margin:16px 0; font-family:'Cascadia Code','Fira Code',monospace; font-size:0.8rem; line-height:1.6; white-space:pre; overflow-x:auto; color:#334155; }
+  .file-ref { color:#2563eb; font-weight:600; }
+  .line-ref { color:#9333ea; font-weight:600; font-size:0.82rem; }
+  .section-tag { display:inline-block; background:#dbeafe; color:#1e40af; font-size:0.75rem; font-weight:700; padding:2px 10px; border-radius:20px; margin-bottom:6px; }
+  hr { border:none; border-top:2px dashed #cbd5e1; margin:32px 0; }
+  @media print { body { padding:10px; } .container { box-shadow:none; padding:20px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>BÁO CÁO KỸ THUẬT DỰ ÁN LOST & FOUND</h1>
+<p class="subtitle">Môn: PRJ301 — Java Web Application Development | Apache Tomcat 10.1 · Java 17 · SQL Server</p>
+
+<h2>1. CẤU TRÚC PROJECT (Project Structure)</h2>
+<div class="diagram-box">lost-found/
+├── src/java/                          ← Mã nguồn Java (back-end)
+│   ├── ConnectDB.properties           ← Cấu hình kết nối CSDL
+│   ├── badwords.txt                   ← Danh sách từ cấm
+│   ├── blacklist_phones.txt           ← Danh sách SĐT bị chặn
+│   ├── controller/                    ← Servlet Controllers (36 file)
+│   │   ├── loginController.java       ← Đăng nhập
+│   │   ├── logoutController.java      ← Đăng xuất
+│   │   ├── registerController.java    ← Đăng ký
+│   │   ├── homeController.java        ← Trang chủ
+│   │   ├── itemDetailController.java  ← Chi tiết + Comment/Reply/Claim
+│   │   ├── reportLostController.java  ← Đăng tin mất/nhặt đồ
+│   │   ├── editItemController.java    ← Sửa bài đăng
+│   │   ├── ReportController.java      ← Báo cáo vi phạm bài viết
+│   │   ├── AuthorizationFilter.java   ← Bộ lọc phân quyền (Filter)
+│   │   └── Admin*Controller.java      ← Các controller quản trị Admin
+│   ├── dal/                           ← Data Access Layer (9 file)
+│   │   ├── DBContext.java             ← Kết nối CSDL (SQL Server)
+│   │   ├── UserDAO.java, ItemDAO.java, MessageDAO.java
+│   │   ├── ClaimDAO.java, CategoryDAO.java, LocationDAO.java
+│   │   └── SupportRequestDAO.java
+│   ├── model/                         ← Java Bean / POJO (7 file)
+│   │   ├── Users.java, Items.java, Message.java
+│   │   ├── Claims.java, Categories.java, Locations.java
+│   │   └── SupportRequest.java
+│   └── util/                          ← Lớp tiện ích
+│       ├── ContentFilter.java         ← Quét từ cấm + SĐT blacklist
+│       └── FileUtil.java              ← Lưu/xóa ảnh upload (dual-write)
+├── web/
+│   ├── WEB-INF/
+│   │   ├── web.xml                    ← Cấu hình Servlet Mapping
+│   │   ├── views/                     ← JSP Views (22 file + 4 admin)
+│   │   └── tags/                      ← Custom Tag Files (navbar, footer...)
+│   ├── assets/css/style.css, assets/js/app.js
+│   └── uploads/                       ← Thư mục lưu ảnh upload
+└── allowedlib/mssql-jdbc-13.2.0.jre11.jar</div>
+<div class="note"><strong>Kiến trúc:</strong> Mô hình <strong>MVC (Model – View – Controller)</strong> kết hợp <strong>DAO Pattern</strong></div>
+
+<h2>2. WORKFLOW (Luồng Xử Lý Request)</h2>
+<div class="diagram-box">  Browser                                   Server (Tomcat)
+    │                                          │
+    │── HTTP Request (GET/POST) ──────────────▶│
+    │                              ┌───────────┴───────────┐
+    │                              │  AuthorizationFilter   │ @WebFilter("/*")
+    │                              │  1. Cho pass assets    │
+    │                              │  2. Set notification   │
+    │                              │  3. Check public path  │
+    │                              │  4. Check login        │
+    │                              │  5. Check admin role   │
+    │                              └───────────┬───────────┘
+    │                                          │ chain.doFilter()
+    │                              ┌───────────┴───────────┐
+    │                              │  Controller (Servlet)  │ doGet()/doPost()
+    │                              └───────────┬───────────┘
+    │                                          │ new XxxDAO()
+    │                              ┌───────────┴───────────┐
+    │                              │      DAO Layer         │ extends DBContext
+    │                              │  PreparedStatement     │
+    │                              └───────────┬───────────┘
+    │                                          │ SQL Query
+    │                              ┌───────────┴───────────┐
+    │                              │   SQL Server Database  │
+    │                              └───────────┬───────────┘
+    │                                          │ Model Objects
+    │                              ┌───────────┴───────────┐
+    │                              │   JSP View (.jsp)      │
+    │                              │   setAttribute+forward │
+    │                              └───────────┬───────────┘
+    │◀──────────── HTML Response ──────────────│</div>
+
+<h3>Chi tiết 6 bước trong AuthorizationFilter</h3>
+<table>
+  <tr><th>Bước</th><th>File & Dòng</th><th>Mô tả</th></tr>
+  <tr><td>1</td><td><span class="file-ref">AuthorizationFilter.java</span> <span class="line-ref">dòng 35-38</span></td><td>Cho pass tĩnh: <code>/assets/</code>, <code>/uploads/</code></td></tr>
+  <tr><td>2</td><td><span class="line-ref">dòng 41-85</span></td><td>Set unread notification count cho navbar</td></tr>
+  <tr><td>3</td><td><span class="line-ref">dòng 89-93</span></td><td>Cho pass trang public: login, register, home, items, item_detail</td></tr>
+  <tr><td>4</td><td><span class="line-ref">dòng 96-99</span></td><td>Chặn chưa login → redirect <code>/login</code></td></tr>
+  <tr><td>5</td><td><span class="line-ref">dòng 104-111</span></td><td>Chặn student truy cập admin</td></tr>
+  <tr><td>6</td><td><span class="line-ref">dòng 114</span></td><td>Pass cho user đã xác thực</td></tr>
+</table>
+
+<h2>3. CÁC MODULE CHÍNH</h2>
+<table>
+  <tr><th>#</th><th>Module</th><th>Controller chính</th><th>View chính</th></tr>
+  <tr><td>1</td><td>Đăng nhập / Đăng ký / Đăng xuất</td><td>loginController, registerController, logoutController</td><td>login.jsp, register.jsp</td></tr>
+  <tr><td>2</td><td>Đăng tin Mất đồ / Nhặt được</td><td>reportLostController</td><td>report_lost.jsp</td></tr>
+  <tr><td>3</td><td>Comment & Reply Comment</td><td>itemDetailController</td><td>item_detail.jsp</td></tr>
+  <tr><td>4</td><td>Thông báo (Notification)</td><td>AuthorizationFilter, Mark*Controller</td><td>navbar.tag, inbox.jsp</td></tr>
+  <tr><td>5</td><td>Yêu cầu nhận đồ (Claim)</td><td>itemDetailController</td><td>item_detail.jsp</td></tr>
+  <tr><td>6</td><td>Báo cáo vi phạm (Report)</td><td>ReportController, AdminModerationController</td><td>moderation.jsp</td></tr>
+  <tr><td>7</td><td>Quản trị Admin</td><td>Admin*Controller</td><td>admin/*.jsp</td></tr>
+  <tr><td>8</td><td>Upload & Quản lý Hình ảnh</td><td>reportLostController, editItemController</td><td>FileUtil.java</td></tr>
+  <tr><td>9</td><td>Bộ lọc nội dung tự động</td><td>ContentFilter.java</td><td>badwords.txt</td></tr>
+</table>
+
+<h2>4. TRÌNH BÀY CHI TIẾT TỪNG MODULE</h2>
+<hr>
+
+<h3>4.1. MODULE ĐĂNG NHẬP — SESSION</h3>
+<span class="section-tag">Câu hỏi: "Trình bày ví dụ login dùng session ntn..."</span>
+
+<h4>doGet() — Hiển thị form đăng nhập</h4>
+<p><span class="file-ref">loginController.java</span> <span class="line-ref">dòng 40-50</span></p>
+<pre><code>HttpSession session = request.getSession(false);  // false = không tạo session mới
+if (session != null && session.getAttribute("currentUser") != null) {
+    response.sendRedirect("home");    // Đã login → về trang chủ
+    return;
+}
+request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);</code></pre>
+
+<h4>doPost() — Xử lý form login</h4>
+<p><span class="file-ref">loginController.java</span> <span class="line-ref">dòng 53-80</span></p>
+<pre><code>String username = request.getParameter("username");
+String password = request.getParameter("password");
+
+UserDAO dao = new UserDAO();
+Users loggedInUser = dao.checkLogin(username, password);
+
+if (loggedInUser != null) {
+    HttpSession session = request.getSession();           // Tạo session mới
+    session.setAttribute("currentUser", loggedInUser);    // Lưu User object vào session
+    session.setAttribute("userRole", loggedInUser.getRole()); // Lưu role
+    response.sendRedirect("home");
+} else {
+    request.setAttribute("error", "Sai tai khoan hoac mat khau!");
+    request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+}</code></pre>
+
+<h4>DAO — Kiểm tra trong Database</h4>
+<p><span class="file-ref">UserDAO.java</span> — <code>checkLogin()</code> <span class="line-ref">dòng 11-32</span></p>
+<pre><code>String sql = "SELECT * FROM Users WHERE username = ? AND password = ? AND is_active = 1";
+ps.setString(1, username);  // PreparedStatement chống SQL Injection
+ps.setString(2, password);
+// Có row → mapUser(rs) → trả về Users object
+// Không có → trả về null</code></pre>
+
+<h4>Session được dùng ở đâu trong dự án</h4>
+<table>
+  <tr><th>Nơi sử dụng</th><th>File</th><th>Dòng</th><th>Code</th></tr>
+  <tr><td>Tạo session</td><td class="file-ref">loginController.java</td><td>72-74</td><td><code>session.setAttribute("currentUser", loggedInUser)</code></td></tr>
+  <tr><td>Kiểm tra login</td><td class="file-ref">AuthorizationFilter.java</td><td>41, 96</td><td><code>session.getAttribute("currentUser")</code></td></tr>
+  <tr><td>Kiểm tra admin</td><td class="file-ref">AuthorizationFilter.java</td><td>46, 101</td><td><code>session.getAttribute("userRole")</code></td></tr>
+  <tr><td>Flash message</td><td>Nhiều controller</td><td>—</td><td><code>session.setAttribute("message", "...")</code></td></tr>
+  <tr><td>Hủy session</td><td class="file-ref">logoutController.java</td><td>59-63</td><td><code>session.invalidate()</code></td></tr>
+</table>
+
+<h4>Logout — Hủy Session</h4>
+<p><span class="file-ref">logoutController.java</span> <span class="line-ref">dòng 57-64</span></p>
+<pre><code>HttpSession session = request.getSession(false);
+if (session != null) {
+    session.invalidate();  // Xóa toàn bộ session data
+}
+response.sendRedirect(request.getContextPath() + "/home");</code></pre>
+
+<hr>
+
+<h3>4.2. VỀ COOKIES</h3>
+<span class="section-tag">Câu hỏi: "Giỏ hàng dùng cookies ở đâu..."</span>
+<p>Dự án <strong>không dùng Cookie</strong> vì đây là ứng dụng tìm đồ thất lạc, không phải thương mại điện tử. Toàn bộ state quản lý bằng <strong>HttpSession</strong>. Cookie duy nhất là <code>JSESSIONID</code> do Tomcat tự tạo.</p>
+<table>
+  <tr><th>Tiêu chí</th><th>Session (dùng trong dự án)</th><th>Cookie</th></tr>
+  <tr><td>Lưu ở</td><td>Server (bộ nhớ Tomcat)</td><td>Client (trình duyệt)</td></tr>
+  <tr><td>Bảo mật</td><td>Cao</td><td>Thấp (user xem/sửa được)</td></tr>
+  <tr><td>Dung lượng</td><td>Không giới hạn</td><td>Tối đa 4KB</td></tr>
+  <tr><td>Thời gian sống</td><td>Đóng trình duyệt / timeout</td><td>Tùy chỉnh maxAge</td></tr>
+</table>
+
+<hr>
+
+<h3>4.3. MODULE COMMENT & REPLY</h3>
+
+<h4>Xem bình luận (doGet) — Xây dựng Comment Tree</h4>
+<p><span class="file-ref">itemDetailController.java</span> — <code>forwardDetail()</code> <span class="line-ref">dòng 97-123</span></p>
+<pre><code>// Lấy tất cả message, lọc ra Comment
+List&lt;Message&gt; comments = new ArrayList&lt;&gt;();
+for (Message msg : messageDAO.getMessagesByItemId(itemId)) {
+    if ("Comment".equalsIgnoreCase(msg.getTitle())) comments.add(msg);
+}
+
+// Xây dựng CÂY BÌNH LUẬN (parent-child tree)
+List&lt;CommentNode&gt; rootNodes = new ArrayList&lt;&gt;();
+Map&lt;Integer, CommentNode&gt; nodeMap = new HashMap&lt;&gt;();
+for (Message c : comments) nodeMap.put(c.getMessageId(), new CommentNode(c));
+for (Message c : comments) {
+    CommentNode node = nodeMap.get(c.getMessageId());
+    if (c.getParentId() == null || c.getParentId() == 0) {
+        rootNodes.add(node);          // Comment gốc
+    } else {
+        nodeMap.get(c.getParentId()).getReplies().add(node); // Reply → gắn vào cha
+    }
+}
+request.setAttribute("commentTree", rootNodes);</code></pre>
+
+<h4>Gửi Comment / Reply (doPost)</h4>
+<p><span class="file-ref">itemDetailController.java</span> — <code>handleSendMessage()</code> <span class="line-ref">dòng 184-215</span></p>
+<pre><code>// Nếu có parent_id → REPLY, không có → COMMENT GỐC
+Integer parentId = null;
+String parentIdRaw = request.getParameter("parent_id");
+if (parentIdRaw != null) parentId = Integer.parseInt(parentIdRaw);
+
+// Lưu comment vào DB
+messageDAO.insertComment(userId, itemId, "Comment", content, parentId);
+
+// Nếu là Reply → GỬI THÔNG BÁO cho người bị reply
+if (parentId != null) {
+    Message parentMsg = messageDAO.getMessageById(parentId);
+    if (parentMsg != null && parentMsg.getUserId() != currentUser.getUserId()) {
+        messageDAO.insertReplyNotification(
+            parentMsg.getUserId(),   // Người NHẬN thông báo
+            currentUser.getUserId(), // Người GỬI reply
+            itemId, "đã trả lời bình luận của bạn."
+        );
+    }
+}</code></pre>
+
+<h4>DAO — SQL INSERT</h4>
+<p><span class="file-ref">MessageDAO.java</span></p>
+<pre><code>// insertComment() dòng 169:
+INSERT INTO Message (user_id, title, message, is_read, related_item_id, parent_id)
+VALUES (?, 'Comment', ?, 0, ?, ?)
+-- parent_id = NULL → comment gốc, có giá trị → reply
+
+// insertReplyNotification() dòng 189:
+INSERT INTO Message (user_id, sender_id, title, message, is_read, related_item_id)
+VALUES (?, ?, 'Reply', ?, 0, ?)</code></pre>
+
+<hr>
+
+<h3>4.4. MODULE THÔNG BÁO</h3>
+<p><span class="file-ref">AuthorizationFilter.java</span> — chạy trên MỌI request</p>
+<pre><code>// Dòng 82-84: Đếm thông báo chưa đọc cho Student
+int unreadCount = msgDao.countUnreadInbox(currUser.getUserId());
+req.setAttribute("unreadInboxCount", unreadCount);
+// → Navbar luôn hiển thị số chính xác trên MỌI trang</code></pre>
+
+<h4>Các loại thông báo</h4>
+<table>
+  <tr><th>Loại (title)</th><th>Mô tả</th><th>Khi nào tạo</th></tr>
+  <tr><td><code>Comment</code></td><td>Ai đó bình luận bài của bạn</td><td>itemDetailController.doPost()</td></tr>
+  <tr><td><code>Reply</code></td><td>Ai đó trả lời bình luận của bạn</td><td>handleSendMessage() dòng 206</td></tr>
+  <tr><td><code>Account</code></td><td>Tài khoản bị khóa/blacklist</td><td>Admin controllers</td></tr>
+  <tr><td><code>Support_*</code></td><td>Kết quả xử lý yêu cầu hỗ trợ</td><td>AdminSupportController</td></tr>
+  <tr><td><code>[REPORT]...</code></td><td>Báo cáo vi phạm (admin thấy)</td><td>ReportController</td></tr>
+</table>
+
+<hr>
+
+<h3>4.5. MODULE UPLOAD HÌNH ẢNH</h3>
+<p><span class="file-ref">reportLostController.java</span> — <code>buildImagesJson()</code> <span class="line-ref">dòng 148-184</span></p>
+<pre><code>@MultipartConfig(maxFileSize = 5MB, maxRequestSize = 20MB)
+
+for (Part part : request.getParts()) {
+    if (!"images".equals(part.getName())) continue;
+    if (count >= 5) break;  // Tối đa 5 ảnh
+    if (!contentType.startsWith("image/")) throw ...;
+
+    String savedName = timestamp + "_" + UUID + extension;
+    FileUtil.saveUploadedFile(part, savedName, context, "uploads");
+}
+// Kết quả DB: ["uploads/1234_abc.jpg","uploads/5678_def.png"]</code></pre>
+
+<h4>Dual-Write — Không mất ảnh khi Clean & Build</h4>
+<p><span class="file-ref">FileUtil.java</span> <span class="line-ref">dòng 14-41</span></p>
+<pre><code>// Bước 1: Lưu vào build/web/uploads/ (Tomcat đọc ngay)
+// Bước 2: Lưu vào web/uploads/ (giữ khi Clean & Build)</code></pre>
+<div class="warn"><strong>Tại sao?</strong> NetBeans Clean & Build xóa sạch <code>build/</code> rồi copy từ <code>web/</code>. Dual-write lưu cả 2 nơi → ảnh không mất.</div>
+
+<hr>
+
+<h3>4.6. MODULE ĐĂNG TIN</h3>
+<p><span class="file-ref">reportLostController.java</span></p>
+<pre><code>// doGet(): Load form + categories + locations → forward report_lost.jsp
+// doPost(): Validate → Upload ảnh → BOT SCAN nội dung → Lưu DB
+
+// Bot scan (dòng 282-288):
+String violation = ContentFilter.scan(title, description);
+if (violation != null) item.setStatus("processing"); // ẨN → admin duyệt
+else item.setStatus("active"); // Hiển thị bình thường
+
+// Cùng 1 controller xử lý 2 URL:
+// /report_lost → type = "lost"
+// /report_found → type = "found"</code></pre>
+
+<hr>
+
+<h3>4.7. MODULE BÁO CÁO VI PHẠM</h3>
+<p><span class="file-ref">ReportController.java</span></p>
+<pre><code>// Kiểm tra đã báo cáo chưa (tránh spam)
+// Lưu report: title = "[REPORT] Tên người báo cáo"
+// Tự động ẨN nếu >= 3 người báo cáo
+// Tự động KHÓA TÀI KHOẢN chủ bài nếu tổng report >= 3</code></pre>
+
+<hr>
+
+<h3>4.8. KẾT NỐI CSDL</h3>
+<p><span class="file-ref">DBContext.java</span> <span class="line-ref">dòng 21-42</span></p>
+<pre><code>public class DBContext {
+    protected Connection connection;
+    public DBContext() {
+        Properties props = new Properties();
+        props.load(getClass().getClassLoader().getResourceAsStream("ConnectDB.properties"));
+        // url = jdbc:sqlserver://localhost:1433;databaseName=Project_PRJ301_DB
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        connection = DriverManager.getConnection(url, user, pass);
+    }
+}
+// Tất cả DAO kế thừa: public class UserDAO extends DBContext { ... }</code></pre>
+
+<h2>5. BẢNG SERVLET MAPPING</h2>
+<table>
+  <tr><th>URL</th><th>Controller</th><th>GET</th><th>POST</th></tr>
+  <tr><td>/login</td><td>loginController</td><td>Form đăng nhập</td><td>Xử lý login</td></tr>
+  <tr><td>/register</td><td>registerController</td><td>Form đăng ký</td><td>Xử lý register</td></tr>
+  <tr><td>/logout</td><td>logoutController</td><td>Hủy session</td><td>—</td></tr>
+  <tr><td>/home</td><td>homeController</td><td>Trang chủ</td><td>—</td></tr>
+  <tr><td>/items</td><td>listPublicItemsController</td><td>Danh sách bài</td><td>—</td></tr>
+  <tr><td>/item_detail?id=X</td><td>itemDetailController</td><td>Xem chi tiết</td><td>Comment/Reply/Claim</td></tr>
+  <tr><td>/report_lost</td><td>reportLostController</td><td>Form báo mất</td><td>Lưu bài</td></tr>
+  <tr><td>/report_found</td><td>reportLostController</td><td>Form báo nhặt</td><td>Lưu bài</td></tr>
+  <tr><td>/edit_item</td><td>editItemController</td><td>Form sửa</td><td>Cập nhật</td></tr>
+  <tr><td>/report_item</td><td>ReportController</td><td>—</td><td>Báo cáo vi phạm</td></tr>
+  <tr><td>/admin/moderation</td><td>AdminModerationController</td><td>Kiểm duyệt</td><td>Approve/Delete</td></tr>
+  <tr><td>/admin/blacklist</td><td>AdminBlacklistController</td><td>Quản lý blacklist</td><td>Thêm/xóa</td></tr>
+</table>
+
+<h2>6. CÁC BẢNG CSDL</h2>
+<table>
+  <tr><th>Bảng</th><th>Mô tả</th><th>Cột quan trọng</th></tr>
+  <tr><td>Users</td><td>Tài khoản</td><td>user_id, username, password, full_name, phone_number, avatar_url, role, is_active</td></tr>
+  <tr><td>Items</td><td>Bài đăng</td><td>item_id, user_id, title, description, images, status, type, location_details</td></tr>
+  <tr><td>Message</td><td>Comment/Notification/Report</td><td>message_id, user_id, title, message, is_read, related_item_id, parent_id, sender_id</td></tr>
+  <tr><td>Claims</td><td>Yêu cầu nhận đồ</td><td>claim_id, item_id, claimer_id, status</td></tr>
+  <tr><td>Categories</td><td>Danh mục</td><td>category_id, name</td></tr>
+  <tr><td>Locations</td><td>Khu vực</td><td>location_id, name</td></tr>
+  <tr><td>SupportRequests</td><td>Yêu cầu hỗ trợ</td><td>id, user_id, subject, message, status</td></tr>
+</table>
+
+<h2>7. CÔNG NGHỆ SỬ DỤNG</h2>
+<table>
+  <tr><th>Thành phần</th><th>Công nghệ</th></tr>
+  <tr><td>Ngôn ngữ</td><td>Java 17</td></tr>
+  <tr><td>Web Server</td><td>Apache Tomcat 10.1.54 (Jakarta EE)</td></tr>
+  <tr><td>IDE</td><td>NetBeans 17</td></tr>
+  <tr><td>CSDL</td><td>Microsoft SQL Server (JDBC 13.2)</td></tr>
+  <tr><td>Front-end</td><td>JSP + JSTL + Bootstrap 5.3 + Custom CSS + Vanilla JS</td></tr>
+  <tr><td>Font</td><td>Google Fonts Inter</td></tr>
+  <tr><td>Build</td><td>Apache Ant (via NetBeans)</td></tr>
+</table>
+
+</div>
+</body>
+</html>
