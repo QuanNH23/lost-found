@@ -31,13 +31,15 @@
         </div>
 
         <c:if test="${not empty ERROR}">
-            <div class="lf-alert lf-alert-error mb-md" style="max-width:720px; margin: 0 auto;">
+            <div class="lf-alert lf-alert-error mb-md" style="max-width:1140px; margin: 0 auto;">
                 <span class="lf-alert__icon">❌</span><span>${ERROR}</span>
             </div>
         </c:if>
 
-        <div class="lf-card" style="max-width:720px; margin: 0 auto;">
-            <form action="${pageContext.request.contextPath}/report_lost" method="post"
+        <div style="display:flex; gap:32px; max-width:1140px; margin:0 auto; align-items:flex-start; flex-wrap:wrap;">
+            <!-- Left Form Column -->
+            <div class="lf-card" style="flex:1 1 650px; margin: 0;">
+                <form action="${pageContext.request.contextPath}/report_lost" method="post"
                   enctype="multipart/form-data" class="lf-form" novalidate>
                 <div class="lf-form-group">
                     <label class="lf-label">Loại tin <span class="req">*</span></label>
@@ -135,6 +137,41 @@
                 </div>
             </form>
         </div>
+
+        <!-- Right Instruction Column -->
+        <div style="flex:0 0 350px; width:350px; background:#f0f7ff; border:1px solid #bfdbfe; border-radius:12px; padding:24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); font-family:'Inter', sans-serif;">
+            <h3 style="font-size:1.25rem; font-weight:800; color:#1e3a8a; margin-top:0; margin-bottom:20px; border-bottom:2px solid #dbeafe; padding-bottom:10px;">Hướng dẫn</h3>
+            
+            <div style="display:flex; flex-direction:column; gap:16px; font-size:0.9rem; color:#1e40af; line-height:1.5;">
+                <div>
+                    <strong style="color:#1e3a8a;">Tiêu đề:</strong> Nhập tiêu đề ngắn gọn, thể hiện rõ ràng mục đích
+                    <div style="font-size:0.8rem; font-style:italic; color:#3b82f6; margin-top:4px;">*VD: Rơi ví, giấy tờ tuỳ thân mang tên Nguyễn Văn A 1996 rơi ở Cầu Giấy, Hà Nội</div>
+                </div>
+                
+                <div style="border-top:1px solid #dbeafe; padding-top:12px;">
+                    <strong style="color:#1e3a8a;">Loại tin:</strong> Chọn loại tin đang thực hiện
+                </div>
+                
+                <div style="border-top:1px solid #dbeafe; padding-top:12px;">
+                    <strong style="color:#1e3a8a;">Danh mục:</strong> Lựa chọn danh mục đồ vật bị mất hoặc nhặt được
+                </div>
+                
+                <div style="border-top:1px solid #dbeafe; padding-top:12px;">
+                    <strong style="color:#1e3a8a;">Khu vực:</strong> Chọn khu vực rơi đồ hoặc nhặt được,
+                    <div style="font-size:0.8rem; font-style:italic; color:#3b82f6; margin-top:4px;">*Càng chỉ định khu vực chi tiết thì người khác sẽ tìm thấy bài đăng này nhanh hơn.</div>
+                </div>
+                
+                <div style="border-top:1px solid #dbeafe; padding-top:12px;">
+                    <strong style="color:#1e3a8a;">Ảnh đại diện bài đăng:</strong> Chụp ảnh đồ vật bị mất hoặc nhặt được
+                    <div style="font-size:0.8rem; font-style:italic; color:#3b82f6; margin-top:4px;">*Lưu ý: Để đảm bảo bảo mật thông tin cá nhân, tất cả ảnh tải lên phải che các mã số (VD: Căn cước công dân phải làm mờ Mã số CCCD và làm mờ ảnh trên CCCD), nếu ảnh tải lên không đảm bảo yếu tố bảo mật thì tin sẽ không được phê duyệt</div>
+                </div>
+            </div>
+            
+            <div style="text-align:center; font-weight:700; color:#2563eb; margin-top:24px; border-top:2px solid #dbeafe; padding-top:16px;">
+                Chúc bạn may mắn!
+            </div>
+        </div>
+    </div>
     </main>
     <lf:footer />
 </div>
