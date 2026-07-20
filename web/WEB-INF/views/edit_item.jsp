@@ -76,8 +76,7 @@
                 <div class="lf-form-group">
                     <label class="lf-label" for="phone">Số điện thoại liên hệ <span class="req">*</span></label>
                     <input type="text" id="phone" name="phone" class="lf-input" required
-                           value="${oldPhone}" maxlength="10"
-                           placeholder="Vd: 0987654321">
+                           value="${oldPhone}" readonly style="background-color: #f3f4f6; cursor: not-allowed;" maxlength="10">
                     <span id="phoneError" style="color: #ef4444; font-size: 0.85rem; margin-top: 4px; display: none; font-weight: 500;">⚠️ Số điện thoại liên hệ phải bắt đầu bằng số 0!</span>
                 </div>
 

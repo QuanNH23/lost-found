@@ -54,9 +54,19 @@ public class loginController extends HttpServlet {
             throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        
+        System.out.println("[LOGIN ATTEMPT] RAW Username: '" + username + "', RAW Password: '" + password + "'");
+
+        if (username != null) {
+            username = username.trim();
+        }
+
+        System.out.println("[LOGIN ATTEMPT] TRIMMED Username: '" + username + "'");
 
         UserDAO dao = new UserDAO();
         Users loggedInUser = dao.checkLogin(username, password);
+        
+        System.out.println("[LOGIN ATTEMPT] Result loggedInUser: " + (loggedInUser != null ? loggedInUser.getUsername() : "null"));
 
         if (loggedInUser != null) {
             HttpSession session = request.getSession();

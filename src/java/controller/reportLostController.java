@@ -236,7 +236,7 @@ public class reportLostController extends HttpServlet {
 
         String title = request.getParameter("title");
         String description = request.getParameter("description");
-        String phone = request.getParameter("phone");
+        String phone = currentUser.getPhoneNumber();
         String categoryIdRaw = request.getParameter("category_id");
         String locationIdRaw = request.getParameter("location_id");
         String dateIncidentRaw = request.getParameter("date_incident");
